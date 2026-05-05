@@ -60,9 +60,11 @@
         "josetr.cmake-language-support-vscode",
         "cheshirekow.cmake-format",
         "ms-vscode.cpptools",
-        "llvm-vs-code-extensions.vscode-clangd"
+        "llvm-vs-code-extensions.vscode-clangd",
+        "PKief.material-icon-theme"
       ],
       "settings": {
+        "workbench.iconTheme": "material-icon-theme",
         // clangd читає build/debug/compile_commands.json з debug preset.
         // clang-tidy конфіг лишається в репозиторії, але автоматичний запуск
         // через clangd буде увімкнено пізніше, після заняття 2.6.
@@ -76,6 +78,7 @@
         // C++ language server-ів одночасно. Основний engine - clangd.
         "C_Cpp.intelliSenseEngine": "disabled",
         "[cpp]": {
+          "editor.formatOnSave": true,
           "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
           "editor.quickSuggestions": {
             "other": "on",
