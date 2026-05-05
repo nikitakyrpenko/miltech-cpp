@@ -53,12 +53,19 @@ jobs:
       # build/debug. Це також збігається з clangd compile_commands і
       # VS Code debug launch config. ARM64 preset додатково перевіряє,
       # що demo-код можна крос-компілювати для SBC target-а.
+
+      - name : Sanitize branch name 
+        id : vars 
+        run : |
+          RAW_TAG="${{ github.head_ref || github.ref_name }}"
+          CLEAN_TAG=$(echo "$RAW_TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._]/-/g' | sed 's/^-//;s/-$//')
+          echo "tag=${CLEAN_TAG}" >> $GITHUB_OUTPUT
       - name: Build inside dev container
         uses: devcontainers/ci@v0.3
         with:
           imageName: ghcr.io/${{ github.repository }}/devcontainer
-          imageTag: ${{ github.head_ref || github.ref_name }} 
-          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer:${{ github.head_ref || github.ref_name }}
+          imageTag: ${{ steps.vars.outputs.tag }} 
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer:${{ steps.vars.outputs.tag }}
           push: always
           runCmd: |
             cmake --preset debug
