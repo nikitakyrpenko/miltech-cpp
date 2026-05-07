@@ -51,6 +51,29 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      "name" : "Debug homework_05: telemetry_parser",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceRoot}/build/debug/homework_05/telemetry_parser",
+      "args": [
+        "${workspaceFolder}/homework_05/data/bad_invalid_number.txt"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "CMake: configure and build",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ]
 }
