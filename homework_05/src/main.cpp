@@ -56,11 +56,6 @@ int main(int argc, char** argv)
     }
   }
 
-  if (frames_size == 0) {
-    std::cerr << "error: no frames at file:  " << argv[1] << std::endl;
-    return 1;
-  }
-
   const Summary summary = summarize(frames, frames_size);
   print_summary(summary);
 

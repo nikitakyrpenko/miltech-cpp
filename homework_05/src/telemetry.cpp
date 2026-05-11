@@ -75,6 +75,9 @@ Error validate_lines(char* fields[], int field_count)
   for (int i = 0; i < field_count; i++) {
     char* ptr = fields[i];
     if (*ptr == '-') {
+      if (*(ptr + 1) == '\0') {
+        return Error::WrongFormat;
+      }
       ptr++;
     }
     while (*ptr != '\0') {
@@ -150,6 +153,10 @@ double compute_frame_rate_hz(const Frame frames[], int frame_count)
   }
   const long elapsed_ms = frames[frame_count - 1].timestamp_ms - frames[0].timestamp_ms;
 
+  if (elapsed_ms == 0) {
+    return 0.0;
+  }
+
   return static_cast<double>((frame_count - 1) * 1000 / elapsed_ms);
 }
 
@@ -195,6 +202,11 @@ Result read_frames(const char* path, Frame out_frames[], int* out_size, int max_
 Summary summarize(const Frame frames[], int frame_count)
 {
   Summary summary{};
+
+  if (frame_count == 0) {
+    return summary;
+  }
+
   summary.frames_total = frame_count;
   summary.frames_valid = frame_count;
   summary.voltage_min = frames[0].voltage_v;
