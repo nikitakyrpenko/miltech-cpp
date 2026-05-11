@@ -56,9 +56,9 @@
       "name" : "Debug homework_05: telemetry_parser",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceRoot}/build/debug/homework_05/telemetry_parser",
+      "program": "${workspaceRoot}/build/debug/homework_05/telemetry_check",
       "args": [
-        "${workspaceFolder}/homework_05/data/bad_invalid_number.txt"
+        "${workspaceFolder}/homework_05/data/good_negative_temp.txt"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

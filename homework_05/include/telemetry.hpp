@@ -3,6 +3,13 @@
 // Fixed-size storage keeps the starter close to the topics from block 1.
 const int MAX_TELEMETRY_FRAMES = 128;
 
+enum Error { OK = 0, WrongFormat, MissingFile, MissingArguments, BadVoltage, BadTemperature, BadGPS, BadSatelites, BadSeq, BadTimestamp };
+
+struct Result {
+  Error err;
+  int at_line;
+};
+
 // One telemetry sample from the input log.
 struct Frame {
   long timestamp_ms;
@@ -26,7 +33,7 @@ struct Summary {
 };
 
 // Reads frames from a whitespace-separated telemetry log.
-int read_frames(const char* path, Frame frames[], int max_frames);
+Result read_frames(const char* path, Frame out_frames[], int* out_size, int max_frames);
 
 // Calculates summary values for already parsed frames.
 Summary summarize(const Frame frames[], int frame_count);

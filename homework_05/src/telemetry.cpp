@@ -67,13 +67,65 @@ double parse_double(const char* text)
   return value;
 }
 
-Frame parse_frame(char line[])
+Error validate_lines(char* fields[], int field_count)
+{
+  if (field_count != EXPECTED_FIELD_COUNT) {
+    return Error::MissingArguments;
+  }
+  for (int i = 0; i < field_count; i++) {
+    char* ptr = fields[i];
+    if (*ptr == '-') {
+      ptr++;
+    }
+    while (*ptr != '\0') {
+      if (*ptr != '.' && (*ptr < '0' || *ptr > '9')) {
+        return Error::WrongFormat;
+      }
+      ptr++;
+    }
+  }
+  return Error::OK;
+}
+
+Error validate_frame(const Frame& fr)
+{
+  if (fr.voltage_v <= 0) {
+    return Error::BadVoltage;
+  }
+  if (fr.temperature_c < -40 || fr.temperature_c > 120) {
+    return Error::BadTemperature;
+  }
+  if (fr.gps_fix < 0 || fr.gps_fix > 1) {
+    return Error::BadGPS;
+  }
+  if (fr.satellites < 0) {
+    return Error::BadSatelites;
+  }
+  return Error::OK;
+}
+
+Error validate_frames(const Frame& prev, const Frame& curr)
+{
+  if (curr.seq != prev.seq + 1) {
+    return Error::BadSeq;
+  }
+  if (prev.timestamp_ms >= curr.timestamp_ms) {
+    return Error::BadTimestamp;
+  }
+  return Error::OK;
+}
+
+Error parse_frame(char line[], Frame& frame)
 {
   char* fields[EXPECTED_FIELD_COUNT] = {};
   const int field_count = split_line(line, fields, EXPECTED_FIELD_COUNT);
-  (void)field_count;
 
-  Frame frame{};
+  Error is_line_valid = validate_lines(fields, field_count);
+
+  if (is_line_valid > Error::OK) {
+    return is_line_valid;
+  }
+
   frame.timestamp_ms = parse_long(fields[0]);
   frame.seq = parse_int(fields[1]);
   frame.voltage_v = parse_double(fields[2]);
@@ -81,22 +133,31 @@ Frame parse_frame(char line[])
   frame.temperature_c = parse_double(fields[4]);
   frame.gps_fix = parse_int(fields[5]);
   frame.satellites = parse_int(fields[6]);
-  return frame;
+
+  Error is_frame_valid = validate_frame(frame);
+
+  if (is_frame_valid > Error::OK) {
+    return is_frame_valid;
+  }
+
+  return Error::OK;
 }
 
 double compute_frame_rate_hz(const Frame frames[], int frame_count)
 {
+  if (frame_count < 2) {
+    return 0.0;
+  }
   const long elapsed_ms = frames[frame_count - 1].timestamp_ms - frames[0].timestamp_ms;
 
   return static_cast<double>((frame_count - 1) * 1000 / elapsed_ms);
 }
 
-int read_frames(const char* path, Frame frames[], int max_frames)
+Result read_frames(const char* path, Frame out_frames[], int* out_size, int max_frames)
 {
   std::ifstream input{path};
   if (!input) {
-    std::cerr << "error: failed to open input file: " << path << '\n';
-    return 0;
+    return {Error::MissingFile, -1};
   }
 
   int frame_count = 0;
@@ -108,12 +169,27 @@ int read_frames(const char* path, Frame frames[], int max_frames)
     }
 
     if (frame_count < max_frames) {
-      frames[frame_count] = parse_frame(line);
+      Frame fr{};
+      Error result = parse_frame(line, fr);
+
+      if (result > Error::OK) {
+        return {result, frame_count};
+      }
+      if (frame_count > 0) {
+        Error is_monotonic = validate_frames(out_frames[frame_count - 1], fr);
+        if (is_monotonic > Error::OK) {
+          return {is_monotonic, frame_count};
+        }
+      }
+
+      out_frames[frame_count] = fr;
       ++frame_count;
     }
   }
 
-  return frame_count;
+  *out_size = frame_count;
+
+  return {Error::OK, -1};
 }
 
 Summary summarize(const Frame frames[], int frame_count)

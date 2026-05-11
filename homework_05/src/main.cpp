@@ -11,14 +11,57 @@ int main(int argc, char** argv)
   }
 
   Frame frames[MAX_TELEMETRY_FRAMES];
-  const int frame_count = read_frames(argv[1], frames, MAX_TELEMETRY_FRAMES);
+  int frames_size{};
 
-  if (frame_count == 0) {
-    std::cerr << argv[1] << " is empty\n";
+  const Result res = read_frames(argv[1], frames, &frames_size, MAX_TELEMETRY_FRAMES);
+
+  switch (res.err) {
+    case WrongFormat: {
+      std::cerr << "error: invalid character combination at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case MissingFile: {
+      std::cerr << "error: failed to open input file: " << argv[1] << '\n';
+      return 1;
+    }
+    case MissingArguments: {
+      std::cerr << "error: invalid frame at line " << res.at_line << " : expected " << 7 << " fields\n";
+      return 1;
+    }
+    case BadVoltage: {
+      std::cerr << "error: invalid voltage value at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case BadTemperature: {
+      std::cerr << "error: invalid temperature value at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case BadGPS: {
+      std::cerr << "error: invalid GPS value at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case BadSatelites: {
+      std::cerr << "error: invalid satelite value at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case BadSeq: {
+      std::cerr << "error: seq value does not increases monotonically at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case BadTimestamp: {
+      std::cerr << "error: timestamp_ms value does not increases monotonically at line " << res.at_line << std::endl;
+      return 1;
+    }
+    case OK: {
+    }
+  }
+
+  if (frames_size == 0) {
+    std::cerr << "error: no frames at file:  " << argv[1] << std::endl;
     return 1;
   }
 
-  const Summary summary = summarize(frames, frame_count);
+  const Summary summary = summarize(frames, frames_size);
   print_summary(summary);
 
   return 0;
