@@ -132,3 +132,16 @@ TEST(TestCalcFirePosition, withIntermidiatePosition_DroneCoordSameAsTargetCoords
   EXPECT_EQ(res.hasIntermidiate, true);
   EXPECT_EQ(status, Result::OK);
 }
+
+TEST(TestCalcFirePosition, withDroneToHight_DroneToHighResult)
+{
+  const Drone d{.position{544.f, 233.f, 500.f}, .at = 13.f, .ap = 12.f};
+  const Ammo a{.name = "M67", .mass = 0.6f, .drag = 0.1f, .lift = 0.0f};
+  const Coord t{544.0f, 233.0f, 0.0f};
+
+  FirePosition res{};
+
+  Result status = calcFirePosition(d, a, t, res);
+
+  EXPECT_EQ(status, Result::DroneToHigh);
+}
