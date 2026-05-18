@@ -6,15 +6,13 @@ int main(int argc, char** argv)
 {
   if (argc != 2) {
     std::cerr << "usage: ugv_odometry <input_path>\n";
-
     return 1;
   }
 
   std::ifstream file(argv[argc - 1]);
 
   if (!file.is_open()) {
-    std::cerr << "File : " << argv[argc - 1] << " not found" << std::endl;
-
+    std::cerr << "file " << argv[argc - 1] << " not found" << std::endl;
     return 1;
   }
 
@@ -24,11 +22,16 @@ int main(int argc, char** argv)
 
   double x{0.0}, y{0.0}, theta{0.0};
 
-  long prev_timestamp_ms;
-  long prev_fl_ticks, prev_fr_ticks;
-  long prev_bl_ticks, prev_br_ticks;
+  long prev_timestamp_ms{-1};
+  long prev_fl_ticks{-1}, prev_fr_ticks{-1};
+  long prev_bl_ticks{-1}, prev_br_ticks{-1};
 
   file >> prev_timestamp_ms >> prev_fl_ticks >> prev_fr_ticks >> prev_bl_ticks >> prev_br_ticks;
+
+  if (prev_timestamp_ms != 0 || prev_fl_ticks != 0 || prev_fr_ticks != 0 || prev_bl_ticks != 0 || prev_br_ticks != 0) {
+    std::cerr << "usage: file empty or malformed\n";
+    return 1;
+  }
 
   long next_timestamp_ms;
   long next_fl_ticks, next_fr_ticks;
@@ -55,7 +58,7 @@ int main(int argc, char** argv)
     y += d * std::sin(theta + dtheta / 2);
     theta += dtheta;
 
-    std::cout << x << " " << y << " " << theta << std::endl;
+    std::cout << next_timestamp_ms << " " << x << " " << y << " " << theta << std::endl;
 
     prev_timestamp_ms = next_timestamp_ms;
     prev_bl_ticks = next_bl_ticks;
