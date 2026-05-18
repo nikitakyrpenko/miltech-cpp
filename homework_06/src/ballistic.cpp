@@ -23,10 +23,6 @@ float calcTAmmo(const Drone &drone, const Ammo &ammo)
 
 float calcHDist(const Drone &drone, const Ammo &ammo, float tAmmo)
 {
-  if (tAmmo == 0.0) {
-    return 0.0;
-  }
-
   float d = ammo.drag;
   float l = ammo.lift;
   float m = ammo.mass;
@@ -48,6 +44,10 @@ float calcHDist(const Drone &drone, const Ammo &ammo, float tAmmo)
 Result calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &target, FirePosition &outFirePosition)
 {
   float ttf = calcTAmmo(drone, ammo);
+  if (ttf == 0.0) {
+    return Result::DroneToHigh;
+  }
+
   float dtf = calcHDist(drone, ammo, ttf);
 
   float D = std::sqrt(std::pow(target.x - drone.position.x, 2) + std::pow(target.y - drone.position.y, 2));
@@ -67,8 +67,16 @@ Result calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &targe
     return Result::OK;
   }
   else {
-    float intermidiateX = target.x - (target.x - drone.position.x) * (dtf + drone.ap) / D;
-    float intermidiateY = target.y - (target.y - drone.position.y) * (dtf + drone.ap) / D;
+    float intermidiateX, intermidiateY;
+    // distance between target and drone is zero -> increment to +X direction
+    if (D == 0) {
+      intermidiateX = target.x + (dtf + drone.ap);
+      intermidiateY = target.y;
+    }
+    else {
+      intermidiateX = target.x - (target.x - drone.position.x) * (dtf + drone.ap) / D;
+      intermidiateY = target.y - (target.y - drone.position.y) * (dtf + drone.ap) / D;
+    }
 
     float D = std::sqrt(std::pow(target.x - intermidiateX, 2) + std::pow(target.y - intermidiateY, 2));
     float ratio = (D - dtf) / D;

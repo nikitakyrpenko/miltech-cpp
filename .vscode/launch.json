@@ -82,7 +82,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/debug/homework_06/drone_ballistic_tests",
       "args": [
-        
+        "--gtest_filter=TestCalcFirePosition.withIntermidiatePosition_DroneCoordSameAsTargetCoords_ammoM67"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
