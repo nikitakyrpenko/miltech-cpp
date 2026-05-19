@@ -23,11 +23,9 @@ float calcTAmmo(const Drone &drone, const Ammo &ammo)
 
 float calcHDist(const Drone &drone, const Ammo &ammo, float tAmmo)
 {
-  float d = ammo.drag;
-  float l = ammo.lift;
-  float m = ammo.mass;
-  float attackSpeed = drone.at;
-
+float d = ammo.drag;
+  float l = ammo.lift;float m = ammo.mass;
+float attackSpeed = drone.at;
   float dtf = (std::pow(tAmmo, 3) * ((6.0f * d * G * l * m) - (6.0f * std::pow(d, 2) * (std::pow(l, 2) - 1) * attackSpeed))) /
                 (36.0f * std::pow(m, 2)) +
               (std::pow(tAmmo, 5) * ((3.0f * std::pow(d, 3) * G * std::pow(l, 3) * m) -
