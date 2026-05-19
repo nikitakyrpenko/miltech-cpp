@@ -9,7 +9,7 @@ TEST(DroneBallisticParser, line_isValid_thenOk)
   Ammo a{};
   Coord t{};
 
-  std::istringstream stream{"543 232 120 543 232 13 12 M67"};
+  std::istringstream stream{"abc 232 120 543 232 13 12 M67"};
 
   Result result = parse(stream, d, a, t);
 
