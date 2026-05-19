@@ -13,4 +13,4 @@ add_executable(telemetry_check src/main.cpp)
 target_link_libraries(telemetry_check PRIVATE telemetry)
 
 target_include_directories(telemetry_check PRIVATE include)
-target_compile_options(telemetry_check PRIVATE -Wall -Wextra -pedantic )
+target_compile_options(telemetry_check PRIVATE -Wall -Wextra -pedantic)
