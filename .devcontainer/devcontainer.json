@@ -88,6 +88,7 @@
           }
         },
         "[cmake]": {
+          "editor.formatOnSave": true,
           "editor.defaultFormatter": "cheshirekow.cmake-format"
         },
         // cmake-format читає конфіг, який Dockerfile копіює в /.

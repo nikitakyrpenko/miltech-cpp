@@ -20,14 +20,13 @@ if(NOT CMAKE_CROSSCOMPILING)
     include(FetchContent)
     include(GoogleTest)
     FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
+        googletest URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+                       DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
     FetchContent_MakeAvailable(googletest)
 
     add_executable(drone_ballistic_tests tests/ballistic_tests.cpp tests/parser_tests.cpp)
-    target_link_libraries(drone_ballistic_tests PUBLIC drone_ballistic_calc drone_ballistic_parser GTest::gtest_main)
+    target_link_libraries(drone_ballistic_tests PUBLIC drone_ballistic_calc drone_ballistic_parser
+                                                       GTest::gtest_main)
     gtest_discover_tests(drone_ballistic_tests DISCOVERY_MODE PRE_TEST)
 
 endif()
