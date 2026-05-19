@@ -60,3 +60,6 @@ jobs:
 
       - name: Run tests
         run: ./build/debug/homework_06/drone_ballistic_tests
+
+      - name: Check clang-formatter
+        run : find homework_06 -type f -regex '.*\.\(cpp\|hpp\|h\|cc\|cxx\)' -exec clang-format --style=file:.devcontainer/.clang-format --dry-run --Werror {} +
