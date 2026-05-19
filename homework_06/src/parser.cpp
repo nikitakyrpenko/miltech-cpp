@@ -2,15 +2,16 @@
 
 #include <cstring>
 #include <istream>
+#include "dto.hpp"
 
-Result parse(std::istream& stream, Drone& drone, Ammo& ammo, Coord& target)
+ParsingResult parse(std::istream& stream, Drone& drone, Ammo& ammo, Coord& target)
 {
   float xd, yd, zd, targetX, targetY, at, ap;
   char ammoType[32];
   float m, d, l;
 
   if (!(stream >> xd >> yd >> zd >> targetX >> targetY >> at >> ap >> ammoType)) {
-    return Result::FileParsingError;
+    return ParsingResult::Malformed;
   }
 
   if (std::strcmp(ammoType, "VOG-17") == 0) {
@@ -29,17 +30,17 @@ Result parse(std::istream& stream, Drone& drone, Ammo& ammo, Coord& target)
     m = 1.40f, d = 0.10f, l = 1.0f;
   }
   else {
-    return Result::UnknownAmmo;
+    return ParsingResult::UnknownAmmo;
   }
 
   if (zd <= 0) {
-    return Result::BadAltitude;
+    return ParsingResult::AltitudeOutOfRange;
   }
   if (ap <= 0) {
-    return Result::BadAccelerationPath;
+    return ParsingResult::AccelerationPathOutOfRange;
   }
   if (at <= 0) {
-    return Result::BadAttackSpeed;
+    return ParsingResult::AttackSpeedOutOfRange;
   }
 
   drone.position = {xd, yd, zd};
@@ -55,5 +56,5 @@ Result parse(std::istream& stream, Drone& drone, Ammo& ammo, Coord& target)
   ammo.drag = d;
   ammo.lift = l;
 
-  return Result::OK;
+  return ParsingResult::OK;
 }

@@ -1,6 +1,9 @@
 #include "ballistic.hpp"
 
 #include <cmath>
+#include "dto.hpp"
+
+constexpr float G = 9.81F;
 
 float calcTAmmo(const Drone &drone, const Ammo &ammo)
 {
@@ -40,11 +43,11 @@ float calcHDist(const Drone &drone, const Ammo &ammo, float tAmmo)
   return dtf;
 }
 
-Result calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &target, FirePosition &outFirePosition)
+ComputationResult calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &target, FirePosition &outFirePosition)
 {
   float ttf = calcTAmmo(drone, ammo);
   if (ttf == 0.0) {
-    return Result::DroneToHigh;
+    return ComputationResult::AltitudeExceeded;
   }
 
   float dtf = calcHDist(drone, ammo, ttf);
@@ -63,7 +66,7 @@ Result calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &targe
     outFirePosition.fire = fire;
     outFirePosition.hasIntermidiate = false;
 
-    return Result::OK;
+    return ComputationResult::OK;
   }
   else {
     float intermidiateX, intermidiateY;
@@ -87,6 +90,6 @@ Result calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &targe
     outFirePosition.fire = {fireX, fireY, drone.position.z};
     outFirePosition.hasIntermidiate = true;
 
-    return Result::OK;
+    return ComputationResult::OK;
   }
 }

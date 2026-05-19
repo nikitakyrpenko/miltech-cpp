@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "ballistic.hpp"
+#include "dto.hpp"
 TEST(DroneBallisticCalc, noIntermidiatePosition_ammoVOG_17)
 {
   const Drone d{.position{180.f, 180.f, 100.f}, .at = 10.f, .ap = 10.f};
@@ -9,7 +10,7 @@ TEST(DroneBallisticCalc, noIntermidiatePosition_ammoVOG_17)
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
   EXPECT_NEAR(res.fire.x, 173.759f, 0.01f);
   EXPECT_NEAR(res.fire.y, 173.759f, 0.01f);
@@ -20,7 +21,7 @@ TEST(DroneBallisticCalc, noIntermidiatePosition_ammoVOG_17)
   EXPECT_EQ(res.intermidiate.z, d.position.z);
 
   EXPECT_EQ(res.hasIntermidiate, true);
-  EXPECT_EQ(status, Result::OK);
+  EXPECT_EQ(status, ComputationResult::OK);
 }
 
 TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_VOG)
@@ -31,7 +32,7 @@ TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_VOG)
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
   EXPECT_NEAR(res.fire.x, 242.711f, 0.01f);
   EXPECT_NEAR(res.fire.y, 242.711f, 0.01f);
@@ -42,7 +43,7 @@ TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_VOG)
   EXPECT_EQ(res.intermidiate.z, d.position.z);
 
   EXPECT_EQ(res.hasIntermidiate, false);
-  EXPECT_EQ(status, Result::OK);
+  EXPECT_EQ(status, ComputationResult::OK);
 }
 
 TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_RKG)
@@ -53,7 +54,7 @@ TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_RKG)
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
   EXPECT_NEAR(res.fire.x, 966.534f, 0.01f);
   EXPECT_NEAR(res.fire.y, 404.519f, 0.01f);
@@ -64,7 +65,7 @@ TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_RKG)
   EXPECT_EQ(res.intermidiate.z, d.position.z);
 
   EXPECT_EQ(res.hasIntermidiate, false);
-  EXPECT_EQ(status, Result::OK);
+  EXPECT_EQ(status, ComputationResult::OK);
 }
 
 TEST(DroneBallisticCalc, withIntermidiatePosition_ammoRKG_3)
@@ -75,7 +76,7 @@ TEST(DroneBallisticCalc, withIntermidiatePosition_ammoRKG_3)
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
   EXPECT_NEAR(res.fire.x, 513.085f, 0.01f);
   EXPECT_NEAR(res.fire.y, 202.085f, 0.01f);
@@ -86,7 +87,7 @@ TEST(DroneBallisticCalc, withIntermidiatePosition_ammoRKG_3)
   EXPECT_EQ(res.intermidiate.z, d.position.z);
 
   EXPECT_EQ(res.hasIntermidiate, true);
-  EXPECT_EQ(status, Result::OK);
+  EXPECT_EQ(status, ComputationResult::OK);
 }
 
 TEST(DroneBallisticCalc, withIntermidiatePosition_ammoM67)
@@ -97,7 +98,7 @@ TEST(DroneBallisticCalc, withIntermidiatePosition_ammoM67)
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
   EXPECT_NEAR(res.intermidiate.x, 597.504f, 0.01f);
   EXPECT_NEAR(res.intermidiate.y, 232.000f, 0.01f);
@@ -108,7 +109,7 @@ TEST(DroneBallisticCalc, withIntermidiatePosition_ammoM67)
   EXPECT_EQ(res.fire.z, d.position.z);
 
   EXPECT_EQ(res.hasIntermidiate, true);
-  EXPECT_EQ(status, Result::OK);
+  EXPECT_EQ(status, ComputationResult::OK);
 }
 
 TEST(DroneBallisticCalc, withIntermidiatePosition_DroneCoordSameAsTargetCoords_ammoM67)
@@ -119,7 +120,7 @@ TEST(DroneBallisticCalc, withIntermidiatePosition_DroneCoordSameAsTargetCoords_a
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
   EXPECT_NEAR(res.intermidiate.x, 608.503f, 0.01f);
   EXPECT_NEAR(res.intermidiate.y, 233.f, 0.01f);
@@ -130,7 +131,7 @@ TEST(DroneBallisticCalc, withIntermidiatePosition_DroneCoordSameAsTargetCoords_a
   EXPECT_EQ(res.fire.z, d.position.z);
 
   EXPECT_EQ(res.hasIntermidiate, true);
-  EXPECT_EQ(status, Result::OK);
+  EXPECT_EQ(status, ComputationResult::OK);
 }
 
 TEST(DroneBallisticCalc, withDroneToHight_DroneToHighResult)
@@ -141,7 +142,7 @@ TEST(DroneBallisticCalc, withDroneToHight_DroneToHighResult)
 
   FirePosition res{};
 
-  Result status = calcFirePosition(d, a, t, res);
+  ComputationResult status = calcFirePosition(d, a, t, res);
 
-  EXPECT_EQ(status, Result::DroneToHigh);
+  EXPECT_EQ(status, ComputationResult::AltitudeExceeded);
 }

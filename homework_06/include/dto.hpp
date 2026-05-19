@@ -1,4 +1,7 @@
-enum Result { OK, FileNotFound, FileParsingError, UnknownAmmo, BadAltitude, BadAttackSpeed, BadAccelerationPath, DroneToHigh };
+#pragma once
+
+enum class ParsingResult { OK, Malformed, UnknownAmmo, AttackSpeedOutOfRange, AccelerationPathOutOfRange, AltitudeOutOfRange };
+enum class ComputationResult { OK, AltitudeExceeded };
 
 struct Coord {
   float x, y, z;

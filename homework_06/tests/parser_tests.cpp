@@ -1,3 +1,4 @@
+#include "dto.hpp"
 #include "parser.hpp"
 
 #include <gtest/gtest.h>
@@ -11,7 +12,7 @@ TEST(DroneBallisticParser, line_isValid_thenOk)
 
   std::istringstream stream{"543 232 120 543 232 13 12 M67"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
   EXPECT_EQ(d.position.x, 543.f);
   EXPECT_EQ(d.position.y, 232.f);
@@ -28,7 +29,7 @@ TEST(DroneBallisticParser, line_isValid_thenOk)
   EXPECT_EQ(a.drag, 0.10f);
   EXPECT_EQ(a.lift, 0.0f);
 
-  EXPECT_EQ(result, Result::OK);
+  EXPECT_EQ(result, ParsingResult::OK);
 }
 
 TEST(DroneBallisticParser, line_containsWrongCharacters_thenError)
@@ -39,9 +40,9 @@ TEST(DroneBallisticParser, line_containsWrongCharacters_thenError)
 
   std::istringstream stream{"abc 232 120 543 232 13 12 M67"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::FileParsingError);
+  EXPECT_EQ(result, ParsingResult::Malformed);
 }
 
 TEST(DroneBallisticParser, line_containsUnknownAmmo_thenError)
@@ -52,9 +53,9 @@ TEST(DroneBallisticParser, line_containsUnknownAmmo_thenError)
 
   std::istringstream stream{"123 232 120 543 232 13 12 FOO"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::UnknownAmmo);
+  EXPECT_EQ(result, ParsingResult::UnknownAmmo);
 }
 
 TEST(DroneBallisticParser, line_containsBadAltitude_thenError)
@@ -65,9 +66,9 @@ TEST(DroneBallisticParser, line_containsBadAltitude_thenError)
 
   std::istringstream stream{"123 232 -10 543 232 13 12 M67"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::BadAltitude);
+  EXPECT_EQ(result, ParsingResult::AltitudeOutOfRange);
 }
 
 TEST(DroneBallisticParser, line_containsBadAttackSpeed_thenError)
@@ -78,9 +79,9 @@ TEST(DroneBallisticParser, line_containsBadAttackSpeed_thenError)
 
   std::istringstream stream{"123 232 123 543 232 0 12 M67"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::BadAttackSpeed);
+  EXPECT_EQ(result, ParsingResult::AttackSpeedOutOfRange);
 }
 
 TEST(DroneBallisticParser, line_containsBadAccelerationPath_thenError)
@@ -91,9 +92,9 @@ TEST(DroneBallisticParser, line_containsBadAccelerationPath_thenError)
 
   std::istringstream stream{"123 232 123 543 232 13 0 M67"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::BadAccelerationPath);
+  EXPECT_EQ(result, ParsingResult::AccelerationPathOutOfRange);
 }
 
 TEST(DroneBallisticParser, line_isEmpty_thenError)
@@ -104,9 +105,9 @@ TEST(DroneBallisticParser, line_isEmpty_thenError)
 
   std::istringstream stream{""};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::FileParsingError);
+  EXPECT_EQ(result, ParsingResult::Malformed);
 }
 
 TEST(DroneBallisticParser, line_lackOfArguments_thenError)
@@ -117,7 +118,7 @@ TEST(DroneBallisticParser, line_lackOfArguments_thenError)
 
   std::istringstream stream{"123 232 123 543 M67"};
 
-  Result result = parse(stream, d, a, t);
+  ParsingResult result = parse(stream, d, a, t);
 
-  EXPECT_EQ(result, Result::FileParsingError);
+  EXPECT_EQ(result, ParsingResult::Malformed);
 }
