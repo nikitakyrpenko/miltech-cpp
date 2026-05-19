@@ -1,4 +1,4 @@
-enum Result { OK, FileNotFound, InvalidAmmoName, DroneToHigh };
+enum Result { OK, FileNotFound, FileParsingError, UnknownAmmo, BadAltitude, BadAttackSpeed, BadAccelerationPath, DroneToHigh };
 
 struct Coord {
   float x, y, z;

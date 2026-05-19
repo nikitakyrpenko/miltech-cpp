@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "ballistic.hpp"
-TEST(TestCalcFirePosition, noIntermidiatePosition_ammoVOG_17)
+TEST(DroneBallisticCalc, noIntermidiatePosition_ammoVOG_17)
 {
   const Drone d{.position{180.f, 180.f, 100.f}, .at = 10.f, .ap = 10.f};
   const Ammo a{.name = "VOG-17", .mass = 0.35f, .drag = 0.07f, .lift = 0.0f};
@@ -23,7 +23,7 @@ TEST(TestCalcFirePosition, noIntermidiatePosition_ammoVOG_17)
   EXPECT_EQ(status, Result::OK);
 }
 
-TEST(TestCalcFirePosition, noIntermidiatePosition_ammoGLIDING_VOG)
+TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_VOG)
 {
   const Drone d{.position{0.f, 0.f, 100.f}, .at = 20.f, .ap = 50.f};
   const Ammo a{.name = "GLIDING-VOG", .mass = 0.45f, .drag = 0.10f, .lift = 1.0f};
@@ -45,7 +45,7 @@ TEST(TestCalcFirePosition, noIntermidiatePosition_ammoGLIDING_VOG)
   EXPECT_EQ(status, Result::OK);
 }
 
-TEST(TestCalcFirePosition, noIntermidiatePosition_ammoGLIDING_RKG)
+TEST(DroneBallisticCalc, noIntermidiatePosition_ammoGLIDING_RKG)
 {
   const Drone d{.position{543.f, 232.f, 120.f}, .at = 13.f, .ap = 12.f};
   const Ammo a{.name = "GLIDING-RKG", .mass = 1.4f, .drag = 0.1f, .lift = 1.0f};
@@ -67,7 +67,7 @@ TEST(TestCalcFirePosition, noIntermidiatePosition_ammoGLIDING_RKG)
   EXPECT_EQ(status, Result::OK);
 }
 
-TEST(TestCalcFirePosition, withIntermidiatePosition_ammoRKG_3)
+TEST(DroneBallisticCalc, withIntermidiatePosition_ammoRKG_3)
 {
   const Drone d{.position{543.f, 232.f, 120.f}, .at = 13.f, .ap = 12.f};
   const Ammo a{.name = "RKG-3", .mass = 1.2f, .drag = 0.1f, .lift = 0.0f};
@@ -89,7 +89,7 @@ TEST(TestCalcFirePosition, withIntermidiatePosition_ammoRKG_3)
   EXPECT_EQ(status, Result::OK);
 }
 
-TEST(TestCalcFirePosition, withIntermidiatePosition_ammoM67)
+TEST(DroneBallisticCalc, withIntermidiatePosition_ammoM67)
 {
   const Drone d{.position{543.f, 232.f, 120.f}, .at = 13.f, .ap = 12.f};
   const Ammo a{.name = "M67", .mass = 0.6f, .drag = 0.1f, .lift = 0.0f};
@@ -111,7 +111,7 @@ TEST(TestCalcFirePosition, withIntermidiatePosition_ammoM67)
   EXPECT_EQ(status, Result::OK);
 }
 
-TEST(TestCalcFirePosition, withIntermidiatePosition_DroneCoordSameAsTargetCoords_ammoM67)
+TEST(DroneBallisticCalc, withIntermidiatePosition_DroneCoordSameAsTargetCoords_ammoM67)
 {
   const Drone d{.position{544.f, 233.f, 120.f}, .at = 13.f, .ap = 12.f};
   const Ammo a{.name = "M67", .mass = 0.6f, .drag = 0.1f, .lift = 0.0f};
@@ -133,7 +133,7 @@ TEST(TestCalcFirePosition, withIntermidiatePosition_DroneCoordSameAsTargetCoords
   EXPECT_EQ(status, Result::OK);
 }
 
-TEST(TestCalcFirePosition, withDroneToHight_DroneToHighResult)
+TEST(DroneBallisticCalc, withDroneToHight_DroneToHighResult)
 {
   const Drone d{.position{544.f, 233.f, 500.f}, .at = 13.f, .ap = 12.f};
   const Ammo a{.name = "M67", .mass = 0.6f, .drag = 0.1f, .lift = 0.0f};
