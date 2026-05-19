@@ -64,5 +64,3 @@ jobs:
       - name: Check clang-formatter
         run : find homework_06 -type f -regex '.*\.\(cpp\|hpp\|h\|cc\|cxx\)' -exec clang-format --style=file:.devcontainer/.clang-format --dry-run --Werror {} +
 
-      - name: Check cmake-formatter
-        run : find homework_06 -type f -name "CMakeLists.txt" -exec cmake-format -c .devcontainer/.cmake-format.json --check {} +

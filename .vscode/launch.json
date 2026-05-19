@@ -54,12 +54,12 @@
     },
     {
       // Локальний debug стартера ДЗ 4. preLaunchTask збирає debug preset.
-      "name": "[HW6][DEBUG]",
+      "name": "Debug homework_06 : drone_ballistic_cli",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/debug/homework_06/drone_ballistic_cli",
       "args": [
-        
+        "${workspaceFolder}/homework_06/data/input.txt"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -77,13 +77,11 @@
       ]
     },
     {  
-      "name": "[HW6][TEST][DEBUG]",
+      "name": "Debug homework_06 : drone_ballistic_tests",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/debug/homework_06/drone_ballistic_tests",
-      "args": [
-        "--gtest_filter=TestCalcFirePosition.withIntermidiatePosition_DroneCoordSameAsTargetCoords_ammoM67"
-      ],
+      "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
