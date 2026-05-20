@@ -24,7 +24,7 @@ TEST(DroneBallisticParser, line_isValid_thenOk)
   EXPECT_EQ(target.y_, 232.F);
   EXPECT_EQ(target.z_, 0.F);
 
-  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay): EXPECT_STREQ requires char*, decay unavoidable
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay): EXPECT_STREQ requires char*, decay unavoidable
   EXPECT_STREQ(ammo.name_, "M67");
   EXPECT_EQ(ammo.mass_, 0.6F);
   EXPECT_EQ(ammo.drag_, 0.10F);

@@ -53,7 +53,6 @@
       ]
     },
     {
-      // Локальний debug стартера ДЗ 4. preLaunchTask збирає debug preset.
       "name": "Debug homework_06 : drone_ballistic_cli",
       "type": "cppdbg",
       "request": "launch",
