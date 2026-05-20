@@ -1,0 +1,2 @@
+InheritParentConfig: true
+Checks: '-modernize-use-trailing-return-type, -readability-identifier-naming, -cppcoreguidelines-avoid-c-arrays, -modernize-avoid-c-arrays'

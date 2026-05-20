@@ -1,27 +1,40 @@
 #pragma once
 
-enum class ParsingResult { OK, Malformed, UnknownAmmo, AttackSpeedOutOfRange, AccelerationPathOutOfRange, AltitudeOutOfRange };
-enum class ComputationResult { OK, AltitudeExceeded };
+#include <cstdint>
+
+constexpr std::uint8_t maxAmmoSize = 32;
+
+enum class ParsingResult : std::uint8_t {
+  OK,
+  Malformed,
+  UnknownAmmo,
+  AttackSpeedOutOfRange,
+  AccelerationPathOutOfRange,
+  AltitudeOutOfRange
+};
+enum class ComputationResult : std::uint8_t { OK, AltitudeExceeded };
 
 struct Coord {
-  float x, y, z;
+  float x_{};
+  float y_{};
+  float z_{};
 };
 
 struct Drone {
-  Coord position;
-  float at;
-  float ap;
+  Coord position_{};
+  float at_{};
+  float ap_{};
 };
 
 struct Ammo {
-  char name[32];
-  float mass;
-  float drag;
-  float lift;
+  char name_[maxAmmoSize]{};
+  float mass_{};
+  float drag_{};
+  float lift_{};
 };
 
 struct FirePosition {
-  Coord intermidiate;
-  Coord fire;
-  bool hasIntermidiate;
+  Coord intermidiate_{};
+  Coord fire_{};
+  bool has_intermidiate_{};
 };

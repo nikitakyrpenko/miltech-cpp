@@ -1,20 +1,24 @@
-#include <fstream>
-#include <iostream>
-
 #include "ballistic.hpp"
 #include "parser.hpp"
 
+#include <cstddef>
+#include <fstream>
+#include <iostream>
+#include <span>
+
 int main(int argc, char** argv)
 {
-  if (argc != 2) {
+  std::span<char*> args{argv, static_cast<size_t>(argc)};
+
+  if (args.size() != 2) {
     std::cerr << "usage: drone_ballistic_cli <input_path>\n";
     return 1;
   }
 
-  std::ifstream file(argv[1]);
+  std::ifstream file(args[1]);
 
   if (!file) {
-    std::cerr << "file " << argv[1] << " not found\n";
+    std::cerr << "file " << args[1] << " not found\n";
     return 1;
   }
 
@@ -26,23 +30,23 @@ int main(int argc, char** argv)
 
   switch (pr) {
     case ParsingResult::Malformed: {
-      std::cerr << "file " << argv[1] << " empty or malformed\n";
+      std::cerr << "file " << args[1] << " empty or malformed\n";
       return 1;
     }
     case ParsingResult::UnknownAmmo: {
-      std::cerr << "file " << argv[1] << " cannot recognize ammo\n";
+      std::cerr << "file " << args[1] << " cannot recognize ammo\n";
       return 1;
     }
     case ParsingResult::AttackSpeedOutOfRange: {
-      std::cerr << "file " << argv[1] << " attack speed value zero or less\n";
+      std::cerr << "file " << args[1] << " attack speed value zero or less\n";
       return 1;
     }
     case ParsingResult::AccelerationPathOutOfRange: {
-      std::cerr << "file " << argv[1] << " acceleration path value zero or less\n";
+      std::cerr << "file " << args[1] << " acceleration path value zero or less\n";
       return 1;
     }
     case ParsingResult::AltitudeOutOfRange: {
-      std::cerr << "file " << argv[1] << " altitude value zero or less\n";
+      std::cerr << "file " << args[1] << " altitude value zero or less\n";
       return 1;
     }
     case ParsingResult::OK: {
@@ -50,7 +54,7 @@ int main(int argc, char** argv)
   }
 
   FirePosition fire{};
-  ComputationResult cr = calcFirePosition(drone, ammo, target, fire);
+  ComputationResult cr = calc_fire_position(drone, ammo, target, fire);
 
   switch (cr) {
     case ComputationResult::AltitudeExceeded: {
@@ -62,10 +66,10 @@ int main(int argc, char** argv)
   }
 
   std::ofstream out("output.txt");
-  if (fire.hasIntermidiate) {
-    out << fire.intermidiate.x << " " << fire.intermidiate.y << "\n";
+  if (fire.has_intermidiate_) {
+    out << fire.intermidiate_.x_ << " " << fire.intermidiate_.y_ << "\n";
   }
-  out << fire.fire.x << " " << fire.fire.y << "\n";
+  out << fire.fire_.x_ << " " << fire.fire_.y_ << "\n";
 
   out.close();
   file.close();

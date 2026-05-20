@@ -3,93 +3,94 @@
 #include <cmath>
 #include "dto.hpp"
 
-constexpr float G = 9.81F;
+static constexpr float kG = 9.81F;
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers): Cardano's cubic formula coefficients
 float calcTAmmo(const Drone &drone, const Ammo &ammo)
 {
-  float a = (ammo.drag * G * ammo.mass) - (2.0f * ammo.drag * ammo.drag * ammo.lift * drone.at);
-  float b = (-3.0f * G * ammo.mass * ammo.mass) + (3.0f * ammo.drag * ammo.lift * ammo.mass * drone.at);
-  float c = 6.0f * ammo.mass * ammo.mass * drone.position.z;
+  float a = (ammo.drag_ * kG * ammo.mass_) - (2.0F * ammo.drag_ * ammo.drag_ * ammo.lift_ * drone.at_);
+  float b = (-3.0F * kG * ammo.mass_ * ammo.mass_) + (3.0F * ammo.drag_ * ammo.lift_ * ammo.mass_ * drone.at_);
+  float c = 6.0F * ammo.mass_ * ammo.mass_ * drone.position_.z_;
 
-  float p = (-1.0f * b * b) / (3.0f * a * a);
-  float q = (2.0f * b * b * b) / (27.0f * a * a * a) + (c / a);
+  float p = (-1.0F * b * b) / (3.0F * a * a);
+  float q = (2.0F * b * b * b) / (27.0F * a * a * a) + (c / a);
 
-  float acos_arg = (3.0f * q) / (2.0f * p) * std::sqrt(-3.0f / p);
+  float acos_arg = (3.0F * q) / (2.0F * p) * sqrtf(-3.0F / p);
 
-  if (acos_arg < -1.0f || acos_arg > 1.0f) {
-    return 0.0;
+  if (acos_arg < -1.0F || acos_arg > 1.0F) {
+    return 0.0F;
   };
 
-  float ttf = 2.0f * std::sqrt(-p / 3.0f) * std::cos((std::acos(acos_arg) + 4.0f * std::acos(-1.0f)) / 3.0f) - b / (3.0f * a);
+  float ttf = 2.0F * sqrtf(-p / 3.0F) * cosf((acosf(acos_arg) + 4.0F * acosf(-1.0F)) / 3.0F) - b / (3.0F * a);
   return ttf;
 }
 
 float calcHDist(const Drone &drone, const Ammo &ammo, float tAmmo)
 {
-  float d = ammo.drag;
-  float l = ammo.lift;
-  float m = ammo.mass;
-  float attackSpeed = drone.at;
-  float dtf = (std::pow(tAmmo, 3) * ((6.0f * d * G * l * m) - (6.0f * std::pow(d, 2) * (std::pow(l, 2) - 1) * attackSpeed))) /
-                (36.0f * std::pow(m, 2)) +
-              (std::pow(tAmmo, 5) * ((3.0f * std::pow(d, 3) * G * std::pow(l, 3) * m) -
-                                     (3.0f * std::pow(d, 4) * std::pow(l, 2) * (std::pow(l, 2) + 1) * attackSpeed))) /
-                (36.0f * (std::pow(l, 2) + 1) * std::pow(m, 4)) +
-              (std::pow(tAmmo, 4) * ((3.0f * std::pow(d, 3) * (std::pow(l, 2) + 1) * std::pow(l, 2) * attackSpeed) +
-                                     (6.0f * std::pow(d, 3) * (std::pow(l, 2) + 1) * std::pow(l, 4) * attackSpeed) -
-                                     (6.0f * std::pow(d, 2) * G * (std::pow(l, 4) + std::pow(l, 2) + 1) * l * m))) /
-                (36.0f * std::pow(std::pow(l, 2) + 1, 2) * std::pow(m, 3)) -
-              (d * std::pow(tAmmo, 2) * attackSpeed) / (2.0f * m) + (tAmmo * attackSpeed);
+  float d = ammo.drag_;
+  float l = ammo.lift_;
+  float m = ammo.mass_;
+  float attackSpeed = drone.at_;
+  float dtf =
+    (powf(tAmmo, 3) * ((6.0F * d * kG * l * m) - (6.0F * powf(d, 2) * (powf(l, 2) - 1) * attackSpeed))) / (36.0F * powf(m, 2)) +
+    (powf(tAmmo, 5) * ((3.0F * powf(d, 3) * kG * powf(l, 3) * m) - (3.0F * powf(d, 4) * powf(l, 2) * (powf(l, 2) + 1) * attackSpeed))) /
+      (36.0F * (powf(l, 2) + 1) * powf(m, 4)) +
+    (powf(tAmmo, 4) * ((3.0F * powf(d, 3) * (powf(l, 2) + 1) * powf(l, 2) * attackSpeed) +
+                       (6.0F * powf(d, 3) * (powf(l, 2) + 1) * powf(l, 4) * attackSpeed) -
+                       (6.0F * powf(d, 2) * kG * (powf(l, 4) + powf(l, 2) + 1) * l * m))) /
+      (36.0F * powf(powf(l, 2) + 1, 2) * powf(m, 3)) -
+    (d * powf(tAmmo, 2) * attackSpeed) / (2.0F * m) + (tAmmo * attackSpeed);
   return dtf;
 }
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-ComputationResult calcFirePosition(const Drone &drone, const Ammo &ammo, const Coord &target, FirePosition &outFirePosition)
+ComputationResult calc_fire_position(const Drone &drone, const Ammo &ammo, const Coord &target, FirePosition &out_fire_position)
 {
   float ttf = calcTAmmo(drone, ammo);
-  if (ttf == 0.0) {
+  if (ttf == 0.0F) {
     return ComputationResult::AltitudeExceeded;
   }
 
   float dtf = calcHDist(drone, ammo, ttf);
 
-  float D = std::sqrt(std::pow(target.x - drone.position.x, 2) + std::pow(target.y - drone.position.y, 2));
+  float D = sqrtf(powf(target.x_ - drone.position_.x_, 2) + powf(target.y_ - drone.position_.y_, 2));
 
-  if (dtf + drone.ap < D) {
+  if (dtf + drone.ap_ < D) {
     float ratio = (D - dtf) / D;
 
-    float fireX = drone.position.x + (target.x - drone.position.x) * ratio;
-    float fireY = drone.position.y + (target.y - drone.position.y) * ratio;
+    float fireX = drone.position_.x_ + (target.x_ - drone.position_.x_) * ratio;
+    float fireY = drone.position_.y_ + (target.y_ - drone.position_.y_) * ratio;
 
-    Coord fire{fireX, fireY, drone.position.z};
+    Coord fire{fireX, fireY, drone.position_.z_};
 
-    outFirePosition.intermidiate = fire;
-    outFirePosition.fire = fire;
-    outFirePosition.hasIntermidiate = false;
+    out_fire_position.intermidiate_ = fire;
+    out_fire_position.fire_ = fire;
+    out_fire_position.has_intermidiate_ = false;
 
     return ComputationResult::OK;
+  }
+
+  float intermidiateX{};
+  float intermidiateY{};
+  // distance between target and drone is zero -> increment to +X direction
+  if (D == 0) {
+    intermidiateX = target.x_ + (dtf + drone.ap_);
+    intermidiateY = target.y_;
   }
   else {
-    float intermidiateX, intermidiateY;
-    // distance between target and drone is zero -> increment to +X direction
-    if (D == 0) {
-      intermidiateX = target.x + (dtf + drone.ap);
-      intermidiateY = target.y;
-    }
-    else {
-      intermidiateX = target.x - (target.x - drone.position.x) * (dtf + drone.ap) / D;
-      intermidiateY = target.y - (target.y - drone.position.y) * (dtf + drone.ap) / D;
-    }
-
-    float D = std::sqrt(std::pow(target.x - intermidiateX, 2) + std::pow(target.y - intermidiateY, 2));
-    float ratio = (D - dtf) / D;
-
-    float fireX = intermidiateX + (target.x - intermidiateX) * ratio;
-    float fireY = intermidiateY + (target.y - intermidiateY) * ratio;
-
-    outFirePosition.intermidiate = {intermidiateX, intermidiateY, drone.position.z};
-    outFirePosition.fire = {fireX, fireY, drone.position.z};
-    outFirePosition.hasIntermidiate = true;
-
-    return ComputationResult::OK;
+    intermidiateX = target.x_ - (target.x_ - drone.position_.x_) * (dtf + drone.ap_) / D;
+    intermidiateY = target.y_ - (target.y_ - drone.position_.y_) * (dtf + drone.ap_) / D;
   }
+
+  float D2 = sqrtf(powf(target.x_ - intermidiateX, 2) + powf(target.y_ - intermidiateY, 2));
+  float ratio = (D2 - dtf) / D2;
+
+  float fireX = intermidiateX + (target.x_ - intermidiateX) * ratio;
+  float fireY = intermidiateY + (target.y_ - intermidiateY) * ratio;
+
+  out_fire_position.intermidiate_ = {intermidiateX, intermidiateY, drone.position_.z_};
+  out_fire_position.fire_ = {fireX, fireY, drone.position_.z_};
+  out_fire_position.has_intermidiate_ = true;
+
+  return ComputationResult::OK;
 }
