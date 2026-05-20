@@ -59,7 +59,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/debug/homework_06/drone_ballistic_cli",
       "args": [
-        "${workspaceFolder}/homework_06/data/input.txt"
+        "${workspaceFolder}/homework_06/data/sample_M67.txt"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

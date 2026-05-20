@@ -27,6 +27,7 @@ if(NOT CMAKE_CROSSCOMPILING)
     add_executable(drone_ballistic_tests tests/ballistic_tests.cpp tests/parser_tests.cpp)
     target_link_libraries(drone_ballistic_tests PUBLIC drone_ballistic_calc drone_ballistic_parser
                                                        GTest::gtest_main)
-    gtest_discover_tests(drone_ballistic_tests DISCOVERY_MODE PRE_TEST)
+    gtest_discover_tests(drone_ballistic_tests DISCOVERY_MODE PRE_TEST PROPERTIES LABELS
+                                                                                  "homework_06")
 
 endif()
