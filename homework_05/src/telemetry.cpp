@@ -194,6 +194,10 @@ Result read_frames(const char* path, Frame out_frames[], int* out_size, int max_
     }
   }
 
+  if (frame_count == 0) {
+    return {Error::EmptyFile, -1};
+  }
+
   *out_size = frame_count;
 
   return {Error::OK, -1};

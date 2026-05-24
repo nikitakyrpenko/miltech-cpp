@@ -52,6 +52,10 @@ int main(int argc, char** argv)
       std::cerr << "error: timestamp_ms value does not increases monotonically at line " << res.at_line << std::endl;
       return 1;
     }
+    case EmptyFile: {
+      std::cerr << "error: input file contains no valid frames\n";
+      return 1;
+    }
     case OK: {
     }
   }

@@ -3,7 +3,19 @@
 // Fixed-size storage keeps the starter close to the topics from block 1.
 const int MAX_TELEMETRY_FRAMES = 128;
 
-enum Error { OK = 0, WrongFormat, MissingFile, MissingArguments, BadVoltage, BadTemperature, BadGPS, BadSatelites, BadSeq, BadTimestamp };
+enum Error {
+  OK = 0,
+  WrongFormat,
+  MissingFile,
+  MissingArguments,
+  BadVoltage,
+  BadTemperature,
+  BadGPS,
+  BadSatelites,
+  BadSeq,
+  BadTimestamp,
+  EmptyFile
+};
 
 struct Result {
   Error err;
