@@ -9,13 +9,13 @@ class DroneBuilder;
 
 class Drone {
 private:
-  Coord position_;
-  float altitude_;
-  float initial_direction_;
-  float attack_speed_;
-  float acceleration_path_;
-  float angular_speed_;
-  float turn_threshold_;
+  Coord position_{};
+  float altitude_{};
+  float initial_direction_{};
+  float attack_speed_{};
+  float acceleration_path_{};
+  float angular_speed_{};
+  float turn_threshold_{};
   float current_speed_{0.0F};
   float current_direction_{0.0F};
   State state_{State::STOPPED};
@@ -27,15 +27,25 @@ private:
 public:
   static DroneBuilder builder();
 
-  const Coord& getPosition() const;
+  inline float acceleration() const;
 
-  float getAltitude() const;
-  float getInitialDirection() const;
-  float getAttackSpeed() const;
-  float getAccelerationPath() const;
-  float getAngularSpeed() const;
-  float getTurnThreshold() const;
-  float getCurrentSpeed() const;
-  float getCurrentDirection() const;
-  State getState() const;
+  void increment_position(float tick);
+  void increment_speed(float tick);
+  void increment_direction(float tick);
+
+  float calculate_target_switch_time_penalty(const Coord& target) const;
+
+  const Coord& get_position() const;
+  float get_altitude() const;
+  float get_initial_direction() const;
+  float get_attack_speed() const;
+  float get_acceleration_path() const;
+  float get_angular_speed() const;
+  float get_turn_threshold() const;
+  float get_current_speed() const;
+  float get_current_direction() const;
+  State get_state() const;
+
+private:
+  float calculate_drone_target_direction_delta(const Coord& target) const;
 };

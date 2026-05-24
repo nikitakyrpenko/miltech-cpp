@@ -25,7 +25,7 @@ public:
 
   DroneBuilder& with_attack_speed(float attack_speed)
   {
-    drone_.initial_direction_ = attack_speed;
+    drone_.attack_speed_ = attack_speed;
     return *this;
   }
 
