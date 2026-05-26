@@ -1,10 +1,26 @@
+#pragma once
+
 #include "Drone.hpp"
+#include "json.hpp"
 
 class DroneBuilder {
 private:
   Drone drone_;
 
 public:
+  static Drone from_json(const nlohmann::json& j)
+  {
+    return Drone::builder()
+      .with_coords({j["position"]["x"], j["position"]["y"]})
+      .with_altitude(j["altitude"])
+      .with_initial_direction(j["initialDirection"])
+      .with_attack_speed(j["attackSpeed"])
+      .with_acceleration_path(j["accelerationPath"])
+      .with_angular_speed(j["angularSpeed"])
+      .with_turn_threshold(j["turnThreshold"])
+      .build();
+  }
+
   DroneBuilder& with_coords(const Coord& pos)
   {
     drone_.position_ = pos;

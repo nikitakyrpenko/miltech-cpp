@@ -3,13 +3,17 @@
 
 class Target {
   int target_id_;
-  int array_time_step_;
-  int time_steps_;
   Coord* coords_;
 
 public:
-  int get_target_id() const;
+  Target(int id, Coord* coords)
+    : target_id_(id)
+    , coords_(coords)
+  {
+  }
 
-  Coord approximate_at_t(float tick) const;
-  Coord interpolate_by_time_delta(float tick, float delta) const;
+  ~Target() { delete[] coords_; }
+
+  inline int get_target_id() const { return target_id_; }
+  const Coord* get_coords() const { return coords_; }
 };
