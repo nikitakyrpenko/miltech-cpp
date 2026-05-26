@@ -1,4 +1,5 @@
-#include "Target.hpp"
+#include "models/Target.hpp"
+
 #include <cmath>
 
 int Target::get_target_id() const

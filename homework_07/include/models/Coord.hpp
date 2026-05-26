@@ -1,3 +1,5 @@
+#pragma once
+
 struct Coord {
   float x_, y_;
 
