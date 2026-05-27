@@ -1,8 +1,8 @@
-#include "service/JsonTargetProvider.hpp"
+#include "service/TargetProvider.hpp"
 
 #include <cmath>
 
-Coord JsonTargetProvider::get_target(int target_id, float tick, float delta) const
+Coord TargetProvider::get_target(int target_id, float tick, float delta) const
 {
   const Coord* coords = ctx_->targets_[target_id]->get_coords();
   float array_time_step = static_cast<float>(ctx_->array_time_step_);
@@ -23,3 +23,5 @@ Coord JsonTargetProvider::get_target(int target_id, float tick, float delta) con
 
   return curr + velocity * delta;
 }
+
+TargetProvider::~TargetProvider() {}

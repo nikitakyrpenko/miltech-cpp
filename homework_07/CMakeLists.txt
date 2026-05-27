@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(drone_target_cli src/main.cpp src/models/Ammo.cpp src/models/Drone.cpp
-                                src/service/AnalyticalSolver.cpp src/service/JsonTargetProvider.cpp)
+                                src/service/AnalyticalSolver.cpp src/service/TargetProvider.cpp)
 target_include_directories(drone_target_cli PUBLIC include external)
 target_compile_options(drone_target_cli PRIVATE -Wall -Wextra -pedantic)
 

@@ -7,9 +7,9 @@
 #include <string>
 
 struct ConfigContext {
-  Drone* drone;
+  Drone* drone_;
   // AmmoContext* ammo_context_;
-  std::string ammo;
+  std::string ammo_;
   float target_array_timestep_;
   float time_step_;
   float hit_radius_;

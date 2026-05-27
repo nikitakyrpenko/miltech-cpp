@@ -1,4 +1,3 @@
-#pragma once
 
 #include "json.hpp"
 #include "service/JsonConfigLoader.hpp"
@@ -127,4 +126,22 @@ TargetContext* JsonConfigLoader::load_targets(const char* source, int array_time
     std::cerr << e.what() << std::endl;
     return nullptr;
   }
+}
+
+JsonConfigLoader::~JsonConfigLoader()
+{
+  delete config_->drone_;
+  delete config_;
+
+  for (int i = 0; i < ammo_->size; i++) {
+    delete ammo_->ammos_[i];
+  }
+  delete[] ammo_->ammos_;
+  delete ammo_;
+
+  for (int i = 0; i < target_->target_count_; i++) {
+    delete target_->targets_[i];
+  }
+  delete[] target_->targets_;
+  delete target_;
 }
