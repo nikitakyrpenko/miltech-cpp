@@ -54,7 +54,7 @@ ConfigContext* JsonConfigLoader::load_config(const char* source)
 
     ammo = j.at("ammo").get<std::string>();
     array_time_step = j.at("targetArrayTimeStep").get<float>();
-    time_step_ = j["simulation"]["timestep"].get<float>();
+    time_step_ = j["simulation"]["timeStep"].get<float>();
     hit_radius_ = j["simulation"]["hitRadius"].get<float>();
   }
   catch (const nlohmann::json::exception& e) {

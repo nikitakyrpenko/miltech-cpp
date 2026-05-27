@@ -30,6 +30,6 @@ public:
   MissionProccessor(const IBallisticSolver* solver, const ITargetProvider* target_provider, const IConfigProvider* config_provider);
   ~MissionProccessor() override;
 
-  void run() override;
+  std::vector<SimulationStep> run() override;
   void change_solver(const IBallisticSolver& solver) override;
 };

@@ -1,4 +1,5 @@
 
+#include "models/SimulationStep.hpp"
 #include "models/Task.hpp"
 #include "service/MissionProccessor.hpp"
 
@@ -15,6 +16,11 @@ MissionProccessor::MissionProccessor(const IBallisticSolver* solver,
 }
 
 MissionProccessor::~MissionProccessor(){};
+
+void MissionProccessor::change_solver(const IBallisticSolver& solver)
+{
+  solver_ = &solver;
+}
 
 MissionProccessor::TargetTask MissionProccessor::calculate_task(
   const Drone& d, const Ammo& a, int target_id, float tick, float ammo_time_to_fall)
@@ -48,11 +54,12 @@ MissionProccessor::TargetTask MissionProccessor::step(float tick)
   return find_optimal(tasks);
 }
 
-void MissionProccessor::run()
+std::vector<SimulationStep> MissionProccessor::run()
 {
   const Simulation* sim = config_provider_->get_simulation();
 
   TargetTask current_task{};
+  std::vector<SimulationStep> steps{};
 
   int iter = 0;
   float tick = sim->time_step_;
@@ -82,11 +89,9 @@ void MissionProccessor::run()
 
     // check does drone reach intermidiate position
     if (!current_task.visited_intermediate_) {
-      // if only fire position then mark as visited
       if (!current_task.task_.has_intermidiate_) {
         current_task.visited_intermediate_ = true;
       }
-      // if reached intermidiate mark as visited
       else if (drone_->is_position_reached(current_task.task_.intermidiate_, 0.5F)) {
         current_task.visited_intermediate_ = true;
       }
@@ -104,12 +109,24 @@ void MissionProccessor::run()
     drone_->increment_direction(navigating_toward, sim->time_step_);
     drone_->increment_position(sim->time_step_);
 
-    Coord target = target_provider_->get_target(current_task.target_id, tick);
-    if (current_task.visited_intermediate_ && drone_->is_position_reached(target, sim->hit_radius_)) {
+    Coord predicted_target = target_provider_->get_target(current_task.target_id, tick);
+
+    steps.push_back({
+      .target_id_ = current_task.target_id,
+      .direction_ = drone_->get_current_direction(),
+      .state_ = drone_->get_state(),
+      .position_ = drone_->get_position(),
+      .drop_point_ = navigating_toward,
+      .predicted_target_ = predicted_target,
+    });
+
+    if (current_task.visited_intermediate_ && drone_->is_position_reached(predicted_target, sim->hit_radius_)) {
       break;
     }
 
     tick += sim->time_step_;
     iter++;
   }
+
+  return steps;
 }
