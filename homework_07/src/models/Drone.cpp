@@ -18,3 +18,9 @@ DroneBuilder Drone::builder()
   return DroneBuilder();
 }
 
+void Drone::increment_speed(float dt) {}
+void Drone::increment_direction(const Coord& target, float dt) {}
+void Drone::increment_position(float dt) {}
+bool Drone::is_position_reached(const Coord& target, float threshold) const { return false; }
+float Drone::penalty(const Coord& target) const { return 0.0F; }
+

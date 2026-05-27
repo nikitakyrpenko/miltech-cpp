@@ -1,3 +1,4 @@
+#pragma once
 #include "models/Ammo.hpp"
 
 struct AmmoContext {

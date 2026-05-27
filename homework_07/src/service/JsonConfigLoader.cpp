@@ -59,6 +59,7 @@ ConfigContext* JsonConfigLoader::load_config(const char* source)
   }
   catch (const nlohmann::json::exception& e) {
     std::cerr << e.what() << std::endl;
+    delete drone;
     return nullptr;
   }
   return new ConfigContext{drone, ammo, array_time_step, time_step_, hit_radius_};

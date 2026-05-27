@@ -7,6 +7,6 @@
 
 class IBallisticSolver {
 public:
-  virtual Task solve(const Drone& drone, const Ammo& ammo, const Coord& target, float tick) = 0;
+  virtual Task solve(const Drone& drone, const Ammo& ammo, const Coord& target) const = 0;
   virtual ~IBallisticSolver() = default;
 };

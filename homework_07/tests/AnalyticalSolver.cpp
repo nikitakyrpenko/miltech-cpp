@@ -23,7 +23,7 @@ TEST(test, test)
   Ammo ammo{"VOG-17", 0.35F, 0.07F, 0.0F};
   Coord target{200.F, 200.F};
 
-  Task result = as.solve(drone, ammo, target, 0.F);
+  Task result = as.solve(drone, ammo, target);
 
   std::cout << "Test";
 }

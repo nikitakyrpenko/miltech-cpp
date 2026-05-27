@@ -3,7 +3,7 @@
 #include "models/Coord.hpp"
 
 float AnalyticalSolver::calculate_time_to_turn(
-  const Coord& from, const Coord& to, float current_direction, float turn_threshold, float angular_speed)
+  const Coord& from, const Coord& to, float current_direction, float turn_threshold, float angular_speed) const
 {
   float turning_angle = std::abs(Calc::calculate_turning_angle(from, to, current_direction));
   if (turning_angle <= turn_threshold) {
@@ -13,7 +13,7 @@ float AnalyticalSolver::calculate_time_to_turn(
 }
 
 float AnalyticalSolver::calculate_time_to_reach(
-  const Coord& from, const Coord& to, float current_speed, float attack_speed, float acceleration, bool decelerate_in_dest)
+  const Coord& from, const Coord& to, float current_speed, float attack_speed, float acceleration, bool decelerate_in_dest) const
 {
   float distance = Calc::lenght(from, to);
   float remaining_acceleration_distance = (attack_speed * attack_speed - current_speed * current_speed) / (2.0F * acceleration);
@@ -49,7 +49,7 @@ float AnalyticalSolver::calculate_time_to_reach(
   return time_to_decelerate + time_to_accelerate;
 }
 
-Task AnalyticalSolver::solve(const Drone& drone, const Ammo& ammo, const Coord& target, float tick)
+Task AnalyticalSolver::solve(const Drone& drone, const Ammo& ammo, const Coord& target) const
 {
   float ammo_time_to_fall = ammo.calculate_ammo_time_to_fall(drone.get_altitude(), drone.get_attack_speed());
   float ammo_distance_to_fall = ammo.calculate_ammo_distance_to_fall(ammo_time_to_fall, drone.get_attack_speed());

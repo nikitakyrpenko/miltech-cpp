@@ -41,6 +41,17 @@ public:
   float get_current_direction() const { return current_direction_; }
   State get_state() const { return state_; }
 
+  void set_position(const Coord& position) { position_ = position; }
+  void set_current_speed(float speed) { current_speed_ = speed; }
+  void set_current_direction(float direction) { current_direction_ = direction; }
+  void set_state(State state) { state_ = state; }
+
+  void increment_speed(float dt);
+  void increment_direction(const Coord& target, float dt);
+  void increment_position(float dt);
+  bool is_position_reached(const Coord& target, float threshold) const;
+  float penalty(const Coord& target) const;
+
 private:
   float calculate_drone_target_direction_delta(const Coord& target) const;
 };
