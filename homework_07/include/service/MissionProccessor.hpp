@@ -12,6 +12,7 @@ class MissionProccessor : public IMissionProccessor {
     int target_id{-1};
     Task task_{};
     bool visited_intermediate_{false};
+    Coord predicted_target_{};
   };
   const IBallisticSolver* solver_;
   const ITargetProvider* target_provider_;

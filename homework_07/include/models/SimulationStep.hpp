@@ -9,5 +9,6 @@ struct SimulationStep {
   State state_;
   Coord position_;
   Coord drop_point_;
+  Coord aim_point_;
   Coord predicted_target_;
 };

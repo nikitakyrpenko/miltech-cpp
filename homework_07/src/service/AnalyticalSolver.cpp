@@ -80,13 +80,14 @@ Task AnalyticalSolver::solve(const Drone& drone, const Ammo& ammo, const Coord& 
   // intermidiate point needed
   Coord intermidiate{};
 
-  // distance between target and drone is zero -> increment to +X direction
-  if (distance == 0.0F) {
-    intermidiate.x_ = target.x_ + (ammo_distance_to_fall + drone.get_acceleration_path());
-    intermidiate.y_ = target.y_;
+  float intermediate_ratio = (ammo_distance_to_fall + drone.get_acceleration_path()) / distance;
+
+  // distance between target and drone is zero, or drone is already within range -> use drone position
+  if (distance == 0.0F || intermediate_ratio >= 1.0F) {
+    intermidiate = drone.get_position();
   }
   else {
-    intermidiate = target - (target - drone.get_position()) * (ammo_distance_to_fall + drone.get_acceleration_path()) / distance;
+    intermidiate = target - (target - drone.get_position()) * intermediate_ratio;
   }
 
   float distance_from_intermidiate_to_target = Calc::lenght(intermidiate, target);
@@ -100,16 +101,12 @@ Task AnalyticalSolver::solve(const Drone& drone, const Ammo& ammo, const Coord& 
   float intermidiate_to_fire_time_to_turn = calculate_time_to_turn(
     intermidiate, fire, Calc::angle(drone.get_position(), intermidiate), drone.get_turn_threshold(), drone.get_angular_speed());
 
-  float current_to_intermidiate_time_to_reach = calculate_time_to_reach(drone.get_position(),
-                                                                        intermidiate,
-                                                                        drone.get_current_speed(),
-                                                                        drone.get_attack_speed(),
-                                                                        drone.acceleration(),
-                                                                        intermidiate_to_fire_time_to_turn == 0.0F ? false : true);
+  float current_to_intermidiate_time_to_reach = calculate_time_to_reach(
+    drone.get_position(), intermidiate, drone.get_current_speed(), drone.get_attack_speed(), drone.acceleration(), false);
 
   // TODO : if snap turn may be performed current_speed need to be recalculatated
   float intermidiate_to_fire_time_to_reach =
-    calculate_time_to_reach(intermidiate, fire, drone.get_current_speed(), drone.get_attack_speed(), drone.acceleration(), false);
+    calculate_time_to_reach(intermidiate, fire, 0.0F, drone.get_attack_speed(), drone.acceleration(), false);
 
   return {.intermidiate_ = intermidiate,
           .fire_ = fire,

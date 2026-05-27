@@ -3,6 +3,7 @@
 #include "models/Task.hpp"
 #include "service/MissionProccessor.hpp"
 
+#include <cmath>
 #include <vector>
 
 MissionProccessor::MissionProccessor(const IBallisticSolver* solver,
@@ -28,7 +29,7 @@ MissionProccessor::TargetTask MissionProccessor::calculate_task(
   Coord initial = target_provider_->get_target(target_id, tick);
   Task t = solver_->solve(d, a, initial);
   Coord predicted = target_provider_->get_target(target_id, tick, t.time_taken + ammo_time_to_fall);
-  return {target_id, solver_->solve(d, a, predicted)};
+  return {target_id, solver_->solve(d, a, predicted), false, predicted};
 }
 
 MissionProccessor::TargetTask MissionProccessor::find_optimal(std::vector<TargetTask> tasks)
@@ -57,6 +58,9 @@ MissionProccessor::TargetTask MissionProccessor::step(float tick)
 std::vector<SimulationStep> MissionProccessor::run()
 {
   const Simulation* sim = config_provider_->get_simulation();
+  const Ammo& ammo = *config_provider_->get_ammo();
+  float ammo_ttf = ammo.calculate_ammo_time_to_fall(drone_->get_altitude(), drone_->get_attack_speed());
+  float ammo_dtf = ammo.calculate_ammo_distance_to_fall(ammo_ttf, drone_->get_attack_speed());
 
   TargetTask current_task{};
   std::vector<SimulationStep> steps{};
@@ -70,6 +74,7 @@ std::vector<SimulationStep> MissionProccessor::run()
     if (current_task.target_id == -1 || current_task.target_id == optimal_task.target_id) {
       current_task.target_id = optimal_task.target_id;
       current_task.task_ = optimal_task.task_;
+      current_task.predicted_target_ = optimal_task.predicted_target_;
     }
     // check worth switching
     else {
@@ -83,33 +88,37 @@ std::vector<SimulationStep> MissionProccessor::run()
 
       float switch_penalty = drone_->penalty(candidate);
 
-      if (optimal_task.task_.time_taken + switch_penalty < current_task.task_.time_taken)
+      TargetTask fresh_current = calculate_task(*drone_, ammo, current_task.target_id, tick, ammo_ttf);
+      if (optimal_task.task_.time_taken + switch_penalty < fresh_current.task_.time_taken)
         current_task = optimal_task;
     }
 
     // check does drone reach intermidiate position
     if (!current_task.visited_intermediate_) {
-      if (!current_task.task_.has_intermidiate_) {
+      if (!optimal_task.task_.has_intermidiate_) {
         current_task.visited_intermediate_ = true;
       }
-      else if (drone_->is_position_reached(current_task.task_.intermidiate_, 0.5F)) {
+      else if (drone_->is_position_reached(optimal_task.task_.intermidiate_, 0.5F)) {
         current_task.visited_intermediate_ = true;
       }
     }
 
     Coord navigating_toward;
     if (current_task.visited_intermediate_) {
-      navigating_toward = current_task.task_.fire_;
+      navigating_toward = optimal_task.task_.fire_;
     }
     else {
-      navigating_toward = current_task.task_.intermidiate_;
+      navigating_toward = optimal_task.task_.intermidiate_;
     }
 
     drone_->increment_speed(sim->time_step_);
     drone_->increment_direction(navigating_toward, sim->time_step_);
     drone_->increment_position(sim->time_step_);
 
-    Coord predicted_target = target_provider_->get_target(current_task.target_id, tick);
+    Coord current_target = target_provider_->get_target(current_task.target_id, tick);
+
+    Coord aim_point =
+      drone_->get_position() + Coord{std::cos(drone_->get_current_direction()), std::sin(drone_->get_current_direction())} * ammo_dtf;
 
     steps.push_back({
       .target_id_ = current_task.target_id,
@@ -117,10 +126,11 @@ std::vector<SimulationStep> MissionProccessor::run()
       .state_ = drone_->get_state(),
       .position_ = drone_->get_position(),
       .drop_point_ = navigating_toward,
-      .predicted_target_ = predicted_target,
+      .aim_point_ = aim_point,
+      .predicted_target_ = current_task.predicted_target_,
     });
 
-    if (current_task.visited_intermediate_ && drone_->is_position_reached(predicted_target, sim->hit_radius_)) {
+    if (current_task.visited_intermediate_ && drone_->is_position_reached(current_target, ammo_dtf)) {
       break;
     }
 
