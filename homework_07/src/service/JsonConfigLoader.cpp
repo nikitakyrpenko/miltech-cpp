@@ -15,13 +15,19 @@ JsonConfigLoader* JsonConfigLoader::create(const char* sim, const char* ammo, co
 
   AmmoContext* arsenal = load_arsenal(ammo);
   if (!arsenal) {
+    delete config->drone_;
     delete config;
     return nullptr;
   }
 
   TargetContext* targets = load_targets(target, static_cast<int>(config->target_array_timestep_));
   if (!targets) {
+    delete config->drone_;
     delete config;
+    for (int i = 0; i < arsenal->size; i++) {
+      delete arsenal->ammos_[i];
+    }
+    delete[] arsenal->ammos_;
     delete arsenal;
     return nullptr;
   }
@@ -89,6 +95,12 @@ AmmoContext* JsonConfigLoader::load_arsenal(const char* source)
   }
   catch (const nlohmann::json::exception& e) {
     std::cerr << e.what() << std::endl;
+    if (result) {
+      for (int i = 0; i < ammo_count; i++) {
+        delete result[i];
+      }
+      delete[] result;
+    }
     return nullptr;
   }
   return new AmmoContext{result, ammo_count};
@@ -106,11 +118,15 @@ TargetContext* JsonConfigLoader::load_targets(const char* source, int array_time
   nlohmann::json j;
   file >> j;
 
-  try {
-    int target_count = j.at("targetCount").get<int>();
-    int time_steps = j.at("timeSteps").get<int>();
+  Target** targets = nullptr;
+  int target_count = 0;
+  int time_steps = 0;
 
-    Target** targets = new Target*[target_count];
+  try {
+    target_count = j.at("targetCount").get<int>();
+    time_steps = j.at("timeSteps").get<int>();
+
+    targets = new Target* [target_count] {};
 
     for (int i = 0; i < target_count; i++) {
       Coord* coords = new Coord[time_steps];
@@ -125,6 +141,12 @@ TargetContext* JsonConfigLoader::load_targets(const char* source, int array_time
   }
   catch (const nlohmann::json::exception& e) {
     std::cerr << e.what() << std::endl;
+    if (targets) {
+      for (int i = 0; i < target_count; i++) {
+        delete targets[i];
+      }
+      delete[] targets;
+    }
     return nullptr;
   }
 }
