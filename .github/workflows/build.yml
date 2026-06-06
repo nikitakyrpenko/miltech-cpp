@@ -38,29 +38,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # devcontainers/ci - офіційний action від Microsoft, який запускає
-      # build всередині devcontainer-а. Послідовність:
-      #
-      # 1. Читає .devcontainer/devcontainer.json.
-      # 2. Підставляє ${localEnv:USER} і ${localEnv:HOME} зі змінних
-      #    середовища runner-а (на ubuntu-latest це `runner` і
-      #    `/home/runner`).
-      # 3. Будує Docker image з Dockerfile, передаючи підставлені args.
-      # 4. Монтує checkout у workspaceFolder.
-      # 5. Виконує runCmd від імені remoteUser.
-      #
-      # CMake preset debug тримає локальну і CI-збірку в одному місці:
-      # build/debug. Це також збігається з clangd compile_commands і
-      # VS Code debug launch config. ARM64 preset додатково перевіряє,
-      # що demo-код можна крос-компілювати для SBC target-а.
-
       - name : Sanitize branch name 
         id : vars 
         run : |
           RAW_TAG="${{ github.head_ref || github.ref_name }}"
           CLEAN_TAG=$(echo "$RAW_TAG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._]/-/g' | sed 's/^-//;s/-$//')
           echo "tag=${CLEAN_TAG}" >> $GITHUB_OUTPUT
-      - name: Build inside dev container
+
+      - name: Build project
         uses: devcontainers/ci@v0.3
         with:
           imageName: ghcr.io/${{ github.repository }}/devcontainer
@@ -72,3 +57,10 @@ jobs:
             cmake --build --preset debug
             cmake --preset aarch64-debug
             cmake --build --preset aarch64-debug
+
+      - name: Run tests
+        run: ./build/debug/homework_06/drone_ballistic_tests
+
+      - name: Check clang-formatter
+        run : find homework_06 -type f -regex '.*\.\(cpp\|hpp\|h\|cc\|cxx\)' -exec clang-format --style=file:.devcontainer/.clang-format --dry-run --Werror {} +
+

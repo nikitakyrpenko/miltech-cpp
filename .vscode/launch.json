@@ -53,12 +53,12 @@
       ]
     },
     {
-      "name" : "Debug homework_05: telemetry_parser",
+      "name": "Debug homework_06 : drone_ballistic_cli",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceRoot}/build/debug/homework_05/telemetry_check",
+      "program": "${workspaceFolder}/build/debug/homework_06/drone_ballistic_cli",
       "args": [
-        "${workspaceFolder}/homework_05/data/good_negative_temp.txt"
+        "${workspaceFolder}/homework_06/data/unknown_ammo.txt"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
