@@ -3,9 +3,13 @@
 
 #include "json.hpp"
 
+#include <exception>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <vector>
+
+static constexpr int MAX_ITER = 10000;
 
 static void dump_json(const std::vector<SimulationStep>& steps)
 {
@@ -31,20 +35,29 @@ static void dump_json(const std::vector<SimulationStep>& steps)
 
 int main(int argc, char* argv[])
 {
-  if (argc != 4) {
+  if (argc < 4) {
     std::cerr << "Usage: " << argv[0] << " <config.json> <ammo.json> <targets.json>" << std::endl;
     return 1;
   }
 
-  Mission* m = MissionFactory::create(LoaderType::JSON, SolverType::ANALYTICAL, argv[1], argv[2], argv[3]);
+  MissionFactory factory;
 
-  if (!m)
+  std::unique_ptr<IMissionProccessor> processor;
+  try {
+    processor = factory.create(LoaderType::JSON, SolverType::TABLE, argv[1], argv[2], argv[3], argv[4]);
+  }
+  catch (const std::exception& e) {
+    std::cerr << "Failed to create mission: " << e.what() << std::endl;
     return 1;
+  }
 
-  auto steps = m->processor->run();
-  delete m;
+  std::vector<SimulationStep> steps;
+  for (int iter = 0; iter < MAX_ITER && !processor->has_finished(); ++iter) {
+    steps.push_back(processor->step());
+  }
 
   dump_json(steps);
 
+  std::cout << "Wrote " << steps.size() << " steps to simulation.json" << std::endl;
   return 0;
 }
