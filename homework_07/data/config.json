@@ -1,14 +1,14 @@
 {
   "drone": {
     "position": {
-      "x": 250,
-      "y": 100
+      "x": 50,
+      "y": 250
     },
     "altitude": 100,
-    "initialDirection": 1.57,
+    "initialDirection": 0,
     "attackSpeed": 10,
-    "accelerationPath": 8,
-    "angularSpeed": 2,
+    "accelerationPath": 10,
+    "angularSpeed": 1,
     "turnThreshold": 0.1
   },
   "ammo": "VOG-17",
