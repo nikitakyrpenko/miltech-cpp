@@ -29,6 +29,11 @@ const Task& MissionProccessor::select_task(const std::vector<Task>& tasks) const
     return optimal;
   }
 
+  // can leak here infinite task if all result are bad
+  if (!std::isfinite(current->time_taken) && current->time_taken != std::numeric_limits<float>::max()) {
+    return optimal;
+  }
+
   // check is lock on target needed, if prerequisits are good, keep current
   const bool lock_in = Calc::lenght(drone_.get_position(), current->solution_.fire_) <= LOCK_FACTOR * sim_.hit_radius_;
 
@@ -55,13 +60,22 @@ SimulationStep MissionProccessor::step()
     const Task task =
       evaluator_->calculate_time_taken(drone_, id, solver_->solve(drone_, ammo_fall_parameters, target.approximate(clock_, 0.F)));
 
+    // skip not feasible task
     if (!std::isfinite(task.time_taken) || task.time_taken == std::numeric_limits<float>::max()) {
       continue;
     }
 
     const float lead = task.time_taken + ammo_fall_parameters.time;
-    tasks.emplace_back(
-      evaluator_->calculate_time_taken(drone_, id, solver_->solve(drone_, ammo_fall_parameters, target.approximate(clock_, lead))));
+
+    const Task lead_task =
+      evaluator_->calculate_time_taken(drone_, id, solver_->solve(drone_, ammo_fall_parameters, target.approximate(clock_, lead)));
+
+    // skip not feasible task
+    if (!std::isfinite(lead_task.time_taken) || lead_task.time_taken == std::numeric_limits<float>::max()) {
+      continue;
+    }
+
+    tasks.emplace_back(lead_task);
   }
 
   // TODO : maybe it can break simulator revisit it
