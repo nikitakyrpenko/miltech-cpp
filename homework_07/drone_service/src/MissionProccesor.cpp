@@ -67,8 +67,8 @@ void MissionProccessor::log_simulation(
                             tar.approximate(current_task.time_taken + ap.time),
                             tel.elapsed()};
 
-  std::cout << "[step " << steps_.size() << "] target=" << step.target_id_ << " state=" << step.state_ << " pos=(" << step.position_.x_ << ", " << step.position_.y_
-            << ")" << " drop=(" << step.drop_point_.x_ << ", " << step.drop_point_.y_ << ")\n";
+  std::cout << "[step " << steps_.size() << "] target=" << step.target_id_ << " state=" << step.state_ << " pos=(" << step.position_.x_
+            << ", " << step.position_.y_ << ")" << " drop=(" << step.drop_point_.x_ << ", " << step.drop_point_.y_ << ")\n";
 
   steps_.push_back(step);
 }
