@@ -1,6 +1,8 @@
 #pragma once
 
+#include <optional>
 #include "Calc.hpp"
+#include "models/DroneTelemetry.hpp"
 #include "service/interface/state/IState.hpp"
 
 class StateAccelerating : public IState {
@@ -8,8 +10,9 @@ class StateAccelerating : public IState {
 
 public:
   const static IState* get_instance() { return &instance; }
-  const IState* execute(Drone& drone, const Coord& coord, float dt, bool should_decelerate) const override;
+  const StateDecision decide(const DroneSpec& spec, const DroneTelemetry& tel, const Coord& coord, bool) const override;
   inline std::string name() const override { return "ACCELERATING"; };
+  inline DroneMode mode() const override { return DroneMode::ACCELERATING; };
 };
 
 inline StateAccelerating StateAccelerating::instance{};
@@ -18,29 +21,30 @@ inline StateAccelerating StateAccelerating::instance{};
 #include "service/state/StateMoving.hpp"
 #include <cmath>
 
-inline const IState* StateAccelerating::execute(Drone& drone, const Coord& coord, float dt, bool should_decelerate) const
+inline const StateDecision StateAccelerating::decide(const DroneSpec& spec,
+                                                     const DroneTelemetry& tel,
+                                                     const Coord& coord,
+                                                     bool decelerate_in_dest) const
 {
-  drone.set_position(drone.get_position() + Coord{std::cos(drone.get_current_direction()), std::sin(drone.get_current_direction())} *
-                                              (drone.get_current_speed() * dt));
-  drone.set_current_speed(drone.get_current_speed() + drone.acceleration() * dt);
+  float delta = Calc::calculate_turning_angle(tel.get_position(), coord, tel.get_current_direction());
+  float angle = Calc::angle(tel.get_position(), coord);
 
-  float angle = Calc::calculate_turning_angle(drone.get_position(), coord, drone.get_current_direction());
-  if (std::abs(angle) > drone.get_turn_threshold())
-    return StateDecelerating::get_instance();
+  // reorient: heading drifted too far — hold current heading and slow down,
+  // then turn in place once stopped (don't steer toward the target at speed)
+  if (std::abs(delta) > spec.get_turn_threshold())
+    return {StateDecelerating::get_instance(), tel.get_current_direction()};
 
-  drone.set_current_direction(drone.get_current_direction() + angle);
+  if (decelerate_in_dest) {
+    float remaining_deceleration_distance = (tel.get_current_speed() * tel.get_current_speed()) / (2.0F * spec.get_acceleration());
+    float distance = Calc::lenght(tel.get_position(), coord);
 
-  if (should_decelerate) {
-    float decel_distance = (drone.get_current_speed() * drone.get_current_speed()) / (2.0F * drone.acceleration());
-    float distance = Calc::lenght(drone.get_position(), coord);
-    if (distance <= decel_distance)
-      return StateDecelerating::get_instance();
+    if (distance <= remaining_deceleration_distance)
+      return {StateDecelerating::get_instance(), angle};
   }
 
-  if (drone.get_current_speed() >= drone.get_attack_speed()) {
-    drone.set_current_speed(drone.get_attack_speed());
-    return StateMoving::get_instance();
+  if (tel.get_current_speed() >= spec.get_attack_speed()) {
+    return {StateMoving::get_instance(), angle};
   }
 
-  return StateAccelerating::get_instance();
+  return {StateAccelerating::get_instance(), angle};
 }

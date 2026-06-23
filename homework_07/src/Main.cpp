@@ -6,10 +6,10 @@
 #include <exception>
 #include <fstream>
 #include <iostream>
-#include <memory>
+#include <latch>
 #include <vector>
 
-static constexpr int MAX_ITER = 10000;
+static constexpr int MAX_ITERATIONS = 10000;
 
 static void dump_json(const std::vector<SimulationStep>& steps)
 {
@@ -26,6 +26,7 @@ static void dump_json(const std::vector<SimulationStep>& steps)
       {"dropPoint", {{"x", s.drop_point_.x_}, {"y", s.drop_point_.y_}}},
       {"aimPoint", {{"x", s.aim_point_.x_}, {"y", s.aim_point_.y_}}},
       {"predictedTarget", {{"x", s.predicted_target_.x_}, {"y", s.predicted_target_.y_}}},
+      {"timeSecSinceStart", s.elapsed_},
     });
   }
 
@@ -42,20 +43,26 @@ int main(int argc, char* argv[])
 
   MissionFactory factory;
 
-  std::unique_ptr<IMissionProccessor> processor;
+  SimulationBundle sim;
   try {
-    processor = factory.create(LoaderType::JSON, SolverType::TABLE, argv[1], argv[2], argv[3], argv[4]);
+    sim = factory.create(LoaderType::JSON, SolverType::TABLE, argv[1], argv[2], argv[3], argv[4]);
   }
   catch (const std::exception& e) {
     std::cerr << "Failed to create mission: " << e.what() << std::endl;
     return 1;
   }
 
-  std::vector<SimulationStep> steps;
-  for (int iter = 0; iter < MAX_ITER && !processor->has_finished(); ++iter) {
-    steps.push_back(processor->step());
-  }
+  std::latch latch{3};
+  sim.target->start(latch);
+  sim.physics->start(latch);
+  sim.mission->start(latch, MAX_ITERATIONS);
 
+  sim.mission->join();  // blocks until the drone reaches the fire point
+
+  sim.target->interrupt();
+  sim.physics->interrupt();
+
+  const std::vector<SimulationStep>& steps = sim.mission->get_steps();
   dump_json(steps);
 
   std::cout << "Wrote " << steps.size() << " steps to simulation.json" << std::endl;

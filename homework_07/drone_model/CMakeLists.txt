@@ -1,4 +1,3 @@
-add_library(drone_model STATIC src/Drone.cpp src/Target.cpp)
+add_library(drone_model INTERFACE)
 
-target_include_directories(drone_model PUBLIC include)
-target_compile_options(drone_model PRIVATE -Wall -Wextra -pedantic)
+target_include_directories(drone_model INTERFACE include)

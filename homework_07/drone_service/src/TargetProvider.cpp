@@ -1,53 +1,84 @@
+
 #include "service/TargetProvider.hpp"
-#include "service/TargetProviderIterator.hpp"
-#include "service/interfaces/IConfigLoader.hpp"
-#include "service/interfaces/ITargetProvider.hpp"
-
-#include <cstddef>
-#include <memory>
-#include <utility>
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cmath>
+#include <iterator>
+#include <latch>
+#include <mutex>
+#include <thread>
 #include <vector>
+#include "models/Coord.hpp"
+#include "models/Target.hpp"
 
-namespace {
-
-std::vector<Target> create_targets(const TargetDTO& targets, const ConfigDTO& config)
+const Target TargetProvider::get_target(int i) const
 {
-  std::vector<Target> result;
-  result.reserve(targets.positions_.size());
-
-  for (size_t i{0}; i < targets.positions_.size(); i++) {
-    Target t(static_cast<int>(i), targets.positions_.at(i), targets.time_steps_, config.target_array_timestep_);
-    result.emplace_back(std::move(t));
-  };
-
-  return result;
+  std::lock_guard<std::mutex> l(mtx_);
+  return targets_.at(i);
 }
 
-}  // namespace
-
-TargetProvider::TargetProvider(const std::shared_ptr<IConfigLoader> config)
-  : targets_(create_targets(config->get_targets(), config->get_config()))
+std::vector<Target> TargetProvider::get_targets() const
 {
+  std::lock_guard<std::mutex> l(mtx_);
+  return targets_;
 }
 
-const Target& TargetProvider::get_target(int id) const
+int TargetProvider::get_size() const
 {
-  return targets_.at(id);
+  return number_of_targets_;
 }
 
-int TargetProvider::size() const
+void TargetProvider::interrupt()
 {
-  return targets_.size();
+  running_ = false;
 }
 
-TargetProviderIterator TargetProvider::begin()
+void TargetProvider::update_targets(const std::chrono::time_point<std::chrono::steady_clock>& start,
+                                    const std::chrono::time_point<std::chrono::steady_clock>& now)
 {
-  return TargetProviderIterator(this, 0);
+  const float elapsed = std::chrono::duration<float>(now - start).count() * timescale_;
+  const int curr_idx = static_cast<int>(std::floor(elapsed / array_timestep_)) % number_of_positions_per_target_;
+  const int next_idx = (curr_idx + 1) % number_of_positions_per_target_;
+
+  std::lock_guard<std::mutex> l(mtx_);
+
+  targets_.clear();
+  targets_.reserve(number_of_targets_);
+
+  const auto& positions = config_->get_targets().positions_;
+  for (int id = 0; id < static_cast<int>(positions.size()); ++id) {
+    const std::vector<Coord>& coords = positions[id];
+    const Coord& curr = coords.at(curr_idx);
+    const Coord& next = coords.at(next_idx);
+    targets_.push_back({id, curr, (next - curr) / array_timestep_});
+  }
 }
 
-TargetProviderIterator TargetProvider::end()
+void TargetProvider::start(std::latch& latch)
 {
-  return TargetProviderIterator(this, this->size());
+  running_ = true;
+
+  worker_ = std::thread([this, &latch]() {
+    latch.arrive_and_wait();
+
+    using clock = std::chrono::steady_clock;
+    const auto period = std::chrono::duration_cast<clock::duration>(std::chrono::duration<float>(scheduler_timestep_ / timescale_));
+
+    const auto start = clock::now();
+    auto next = start + period;
+    while (running_) {
+      update_targets(start, clock::now());
+      std::this_thread::sleep_until(next);
+      next += period;
+    }
+  });
 }
 
-TargetProvider::~TargetProvider() {}
+TargetProvider::~TargetProvider()
+{
+  interrupt();
+  if (worker_.joinable()) {
+    worker_.join();
+  }
+}

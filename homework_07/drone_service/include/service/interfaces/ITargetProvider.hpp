@@ -2,15 +2,13 @@
 
 #include "models/Target.hpp"
 
-class TargetProviderIterator;
+#include <vector>
 
 class ITargetProvider {
 public:
-  virtual const Target& get_target(int id) const = 0;
-  virtual int size() const = 0;
-
-  virtual TargetProviderIterator begin() = 0;
-  virtual TargetProviderIterator end() = 0;
+  virtual const Target get_target(int id) const = 0;
+  virtual std::vector<Target> get_targets() const = 0;
+  virtual int get_size() const = 0;
 
   virtual ~ITargetProvider() = default;
 };

@@ -8,30 +8,23 @@ class StateTurning : public IState {
 
 public:
   const static IState* get_instance() { return &instance; }
-  const IState* execute(Drone& drone, const Coord& coord, float dt, bool) const override;
+  const StateDecision decide(const DroneSpec& spec, const DroneTelemetry& tel, const Coord& coord, bool) const override;
   inline std::string name() const override { return "TURNING"; };
+  inline DroneMode mode() const override { return DroneMode::TURNING; };
 };
 
 inline StateTurning StateTurning::instance{};
 
 #include "service/state/StateAccelerating.hpp"
 
-inline const IState* StateTurning::execute(Drone& drone, const Coord& coord, float dt, bool) const
+inline const StateDecision StateTurning::decide(const DroneSpec& spec, const DroneTelemetry& tel, const Coord& coord, bool) const
 {
-  float angle = Calc::calculate_turning_angle(drone.get_position(), coord, drone.get_current_direction());
+  float delta = Calc::calculate_turning_angle(tel.get_position(), coord, tel.get_current_direction());
+  float dir = Calc::angle(tel.get_position(), coord);
 
-  if (std::abs(angle) <= drone.get_turn_threshold()) {
-    drone.set_current_direction(drone.get_current_direction() + angle);
-    return StateAccelerating::get_instance();
+  if (std::abs(delta) <= spec.get_turn_threshold()) {
+    return {StateAccelerating::get_instance(), dir};
   }
 
-  float rot_step = drone.get_angular_speed() * dt;
-
-  if (std::abs(angle) <= rot_step) {
-    drone.set_current_direction(drone.get_current_direction() + angle);
-    return StateAccelerating::get_instance();
-  }
-
-  drone.set_current_direction(drone.get_current_direction() + (angle > 0.0F ? rot_step : -rot_step));
-  return StateTurning::get_instance();
+  return {StateTurning::get_instance(), dir};
 }

@@ -5,7 +5,7 @@ add_library(
     src/FirepointProvider.cpp
     src/BallisticSolutionEvaluator.cpp
     src/MissionProccesor.cpp
-    src/DroneProvider.cpp
+    src/DronePhysics.cpp
     src/MissionFactory.cpp
     src/AnalyticalBallisticSolver.cpp
     src/TableBallisticSolver.cpp)

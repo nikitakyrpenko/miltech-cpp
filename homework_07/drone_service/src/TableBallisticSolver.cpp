@@ -1,6 +1,6 @@
 #include "service/TableBallisticSolver.hpp"
 
-#include "dto/BallisticTable.hpp"
+#include "dto/BallisticTableDTO.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -32,7 +32,7 @@ Interp find_interp(float value, const std::vector<float>& axis)
   return {i, frac};
 }
 
-BallisticTable::Result lerp(const BallisticTable::Result& a, const BallisticTable::Result& b, float t)
+BallisticTableDTO::Result lerp(const BallisticTableDTO::Result& a, const BallisticTableDTO::Result& b, float t)
 {
   return {
     a.ammo_time_to_fall + (b.ammo_time_to_fall - a.ammo_time_to_fall) * t,
@@ -40,7 +40,7 @@ BallisticTable::Result lerp(const BallisticTable::Result& a, const BallisticTabl
   };
 }
 
-std::size_t flat_index(const BallisticTable& t, int iz, int iv, int im, int id, int il)
+std::size_t flat_index(const BallisticTableDTO& t, int iz, int iv, int im, int id, int il)
 {
   return (((static_cast<std::size_t>(iz) * t.v.size() + iv) * t.m.size() + im) * t.d.size() + id) * t.l.size() + il;
 }
@@ -49,7 +49,7 @@ std::size_t flat_index(const BallisticTable& t, int iz, int iv, int im, int id, 
 
 FallResult TableBallisticSolver::fall(const Ammo& ammo, float altitude, float speed) const
 {
-  const BallisticTable& t = loader_->get_table();
+  const BallisticTableDTO& t = loader_->get_table();
 
   const Interp iz = find_interp(altitude, t.z);
   const Interp iv = find_interp(speed, t.v);
@@ -57,9 +57,9 @@ FallResult TableBallisticSolver::fall(const Ammo& ammo, float altitude, float sp
   const Interp id = find_interp(ammo.get_drag(), t.d);
   const Interp il = find_interp(ammo.get_lift(), t.l);
 
-  const auto at = [&t](int a, int b, int c, int e, int f) -> const BallisticTable::Result& { return t.data[flat_index(t, a, b, c, e, f)]; };
+  const auto at = [&t](int a, int b, int c, int e, int f) -> const BallisticTableDTO::Result& { return t.data[flat_index(t, a, b, c, e, f)]; };
 
-  BallisticTable::Result v[16];
+  BallisticTableDTO::Result v[16];
   for (int a = 0; a < 2; ++a) {
     for (int b = 0; b < 2; ++b) {
       for (int c = 0; c < 2; ++c) {
@@ -72,7 +72,7 @@ FallResult TableBallisticSolver::fall(const Ammo& ammo, float altitude, float sp
     }
   }
 
-  BallisticTable::Result w[8];
+  BallisticTableDTO::Result w[8];
   for (int a = 0; a < 2; ++a) {
     for (int b = 0; b < 2; ++b) {
       for (int c = 0; c < 2; ++c) {
@@ -81,19 +81,19 @@ FallResult TableBallisticSolver::fall(const Ammo& ammo, float altitude, float sp
     }
   }
 
-  BallisticTable::Result u[4];
+  BallisticTableDTO::Result u[4];
   for (int a = 0; a < 2; ++a) {
     for (int b = 0; b < 2; ++b) {
       u[a * 2 + b] = lerp(w[a * 4 + b * 2], w[a * 4 + b * 2 + 1], im.frac);
     }
   }
 
-  BallisticTable::Result s[2];
+  BallisticTableDTO::Result s[2];
   for (int a = 0; a < 2; ++a) {
     s[a] = lerp(u[a * 2], u[a * 2 + 1], iv.frac);
   }
 
-  const BallisticTable::Result out = lerp(s[0], s[1], iz.frac);
+  const BallisticTableDTO::Result out = lerp(s[0], s[1], iz.frac);
 
   return {out.ammo_time_to_fall, out.ammo_distance_to_fall};
 }
