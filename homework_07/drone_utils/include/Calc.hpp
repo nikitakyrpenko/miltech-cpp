@@ -6,6 +6,7 @@
 
 namespace Calc {
 
+// how much to turn from current direction to dest
 inline float calculate_turning_angle(const Coord& from, const Coord& to, float curr_direction)
 {
   Coord diff = to - from;
@@ -29,18 +30,19 @@ inline float lenght(const Coord& from, const Coord& to)
   return std::hypot(xd, yd);
 }
 
-inline float point_to_segment_distance(const Coord& point, const Coord& seg_a, const Coord& seg_b)
+// given point {intermididate or fire} check does line from start to end crossed point
+inline float point_to_segment_distance(const Coord& point, const Coord& start, const Coord& end)
 {
-  Coord ab = seg_b - seg_a;
+  Coord ab = end - start;
   float len_sq = ab.x_ * ab.x_ + ab.y_ * ab.y_;
 
   float t = 0.0F;
   if (len_sq > 0.0F) {
-    t = ((point.x_ - seg_a.x_) * ab.x_ + (point.y_ - seg_a.y_) * ab.y_) / len_sq;
+    t = ((point.x_ - start.x_) * ab.x_ + (point.y_ - start.y_) * ab.y_) / len_sq;
     t = std::clamp(t, 0.0F, 1.0F);
   }
 
-  Coord closest = seg_a + ab * t;
+  Coord closest = start + ab * t;
   return lenght(point, closest);
 }
 }  // namespace Calc

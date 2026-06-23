@@ -70,34 +70,37 @@ BallisticSolutionEvaluator::Turn BallisticSolutionEvaluator::calculate_time_to_t
 }
 
 BallisticSolutionEvaluator::CompResult BallisticSolutionEvaluator::calculate_leg(
-  const Drone& drone, const Coord& from, const Coord& to, float current_direction, float current_speed, bool decelerate_in_dest) const
+  const DroneSpec& spec, const Coord& from, const Coord& to, float current_direction, float current_speed, bool decelerate_in_dest) const
 {
   Turn data = calculate_time_to_turn(
-    from, to, current_direction, current_speed, drone.get_turn_threshold(), drone.get_angular_speed(), drone.acceleration());
+    from, to, current_direction, current_speed, spec.get_turn_threshold(), spec.get_angular_speed(), spec.get_acceleration());
 
   // snap turn performed -> drone keeps current speed, otherwise it decelerated to a stop
   float starting_speed = (data.time == 0.0F) ? current_speed : 0.0F;
   float travel_time =
-    calculate_time_to_reach(data.position, to, starting_speed, drone.get_attack_speed(), drone.acceleration(), decelerate_in_dest);
+    calculate_time_to_reach(data.position, to, starting_speed, spec.get_attack_speed(), spec.get_acceleration(), decelerate_in_dest);
 
   return {data.time + travel_time, data.direction};
 }
 
-const Task BallisticSolutionEvaluator::calculate_time_taken(const Drone& drone, int target_id, const BallisticSolution& solution) const
+const Task BallisticSolutionEvaluator::calculate_time_taken(const DroneTelemetry& tel,
+                                                            const DroneSpec& spec,
+                                                            int target_id,
+                                                            const BallisticSolution& solution) const
 {
   if (!solution.intermididate_.has_value()) {
     CompResult leg =
-      calculate_leg(drone, drone.get_position(), solution.fire_, drone.get_current_direction(), drone.get_current_speed(), false);
+      calculate_leg(spec, tel.get_position(), solution.fire_, tel.get_current_direction(), tel.get_current_speed(), false);
 
     return {target_id, solution, leg.time};
   }
 
   // leg 1: current position -> intermidiate, must arrive at zero velocity
   CompResult leg1 =
-    calculate_leg(drone, drone.get_position(), *solution.intermididate_, drone.get_current_direction(), drone.get_current_speed(), true);
+    calculate_leg(spec, tel.get_position(), *solution.intermididate_, tel.get_current_direction(), tel.get_current_speed(), true);
 
   // leg 2: intermidiate -> fire, accelerate from zero to attack speed
-  CompResult leg2 = calculate_leg(drone, *solution.intermididate_, solution.fire_, leg1.direction, 0.0F, false);
+  CompResult leg2 = calculate_leg(spec, *solution.intermididate_, solution.fire_, leg1.direction, 0.0F, false);
 
   // cannot reach attack speed at fire, not valid task
   if (leg2.time == std::numeric_limits<float>::max()) {

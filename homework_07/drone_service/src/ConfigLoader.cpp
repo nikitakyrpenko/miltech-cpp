@@ -34,7 +34,11 @@ std::unique_ptr<ConfigDTO> parse_config(const char* source)
     dto->turn_threshold_ = j["drone"]["turnThreshold"].get<float>();
     dto->ammo_ = j["ammo"].get<std::string>();
     dto->target_array_timestep_ = j["targetArrayTimeStep"].get<float>();
+
     dto->time_step_ = j["simulation"]["timeStep"].get<float>();
+    dto->physics_timestep = j["simulation"]["physicsTimeStep"].get<float>();
+    dto->target_timestep = j["simulation"]["targetTimeStep"].get<float>();
+    dto->timescale = j["simulation"]["timeScale"].get<float>();
     dto->hit_radius_ = j["simulation"]["hitRadius"].get<float>();
 
     return dto;
@@ -101,13 +105,13 @@ std::unique_ptr<AmmoDTO> parse_arsenal(const char* source)
     return nullptr;
   }
 }
-std::unique_ptr<BallisticTable> parse_table(const char* source)
+std::unique_ptr<BallisticTableDTO> parse_table(const char* source)
 {
   if (source == nullptr || *source == '\0') {  // table not requested
     return nullptr;
   }
 
-  BallisticTable table;
+  BallisticTableDTO table;
 
   std::ifstream f(source);
   if (!f.is_open())
@@ -139,7 +143,7 @@ std::unique_ptr<BallisticTable> parse_table(const char* source)
     f >> table.data[i].ammo_time_to_fall >> table.data[i].ammo_distance_to_fall;
   }
 
-  return std::make_unique<BallisticTable>(std::move(table));
+  return std::make_unique<BallisticTableDTO>(std::move(table));
 }
 
 }  // namespace

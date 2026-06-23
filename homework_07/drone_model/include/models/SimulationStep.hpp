@@ -12,4 +12,5 @@ struct SimulationStep {
   Coord drop_point_;
   Coord aim_point_;
   Coord predicted_target_;
+  float elapsed_;
 };

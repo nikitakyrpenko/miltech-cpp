@@ -27,10 +27,13 @@ class BallisticSolutionEvaluator : public IBallisticSolutionEvaluator {
                               float acceleration) const;
 
   CompResult calculate_leg(
-    const Drone& drone, const Coord& from, const Coord& to, float current_direction, float current_speed, bool decelerate_in_dest) const;
+    const DroneSpec& spec, const Coord& from, const Coord& to, float current_direction, float current_speed, bool decelerate_in_dest) const;
 
 public:
-  const Task calculate_time_taken(const Drone& drone, int target_id, const BallisticSolution& solution) const override;
+  const Task calculate_time_taken(const DroneTelemetry& tel,
+                                  const DroneSpec& spec,
+                                  int target_id,
+                                  const BallisticSolution& solution) const override;
 
   ~BallisticSolutionEvaluator() override{};
 };

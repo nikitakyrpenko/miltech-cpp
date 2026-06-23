@@ -7,8 +7,9 @@ class StateDecelerating : public IState {
 
 public:
   const static IState* get_instance() { return &instance; }
-  const IState* execute(Drone& drone, const Coord& coord, float dt, bool) const override;
+  const StateDecision decide(const DroneSpec& spec, const DroneTelemetry& tel, const Coord& coord, bool) const override;
   inline std::string name() const override { return "DECELERATING"; };
+  inline DroneMode mode() const override { return DroneMode::DECELERATING; };
 };
 
 inline StateDecelerating StateDecelerating::instance{};
@@ -19,29 +20,24 @@ inline StateDecelerating StateDecelerating::instance{};
 
 #include <cmath>
 
-inline const IState* StateDecelerating::execute(Drone& drone, const Coord& coord, float dt, bool) const
+inline const StateDecision StateDecelerating::decide(const DroneSpec& spec, const DroneTelemetry& tel, const Coord& coord, bool) const
 {
-  drone.set_position(drone.get_position() + Coord{std::cos(drone.get_current_direction()), std::sin(drone.get_current_direction())} *
-                                              (drone.get_current_speed() * dt));
-  drone.set_current_speed(drone.get_current_speed() - drone.acceleration() * dt);
+  float delta = Calc::calculate_turning_angle(tel.get_position(), coord, tel.get_current_direction());
+  float dir = Calc::angle(tel.get_position(), coord);
 
-  float angle = Calc::calculate_turning_angle(drone.get_position(), coord, drone.get_current_direction());
-  if (std::abs(angle) <= drone.get_turn_threshold())
-    drone.set_current_direction(drone.get_current_direction() + angle);
+  if (tel.get_current_speed() <= 0.0F)
+    return {StateStopped::get_instance(), dir};
 
-  if (drone.get_current_speed() <= 0.0F) {
-    drone.set_current_speed(0.0F);
-    return StateStopped::get_instance();
-  }
+  // decelerating to reorient: hold current heading so physics slows in a straight line
+  // (don't steer toward the target until we've stopped and can turn in place)
+  if (std::abs(delta) > spec.get_turn_threshold())
+    return {StateDecelerating::get_instance(), tel.get_current_direction()};
 
-  // decelerating to reorient, not to arrive -> keep slowing down regardless of distance to target
-  if (std::abs(angle) > drone.get_turn_threshold())
-    return StateDecelerating::get_instance();
+  float remaining_deceleration_distance = (tel.get_current_speed() * tel.get_current_speed()) / (2.0F * spec.get_acceleration());
+  float distance = Calc::lenght(tel.get_position(), coord);
 
-  float decel_distance = (drone.get_current_speed() * drone.get_current_speed()) / (2.0F * drone.acceleration());
-  float distance = Calc::lenght(drone.get_position(), coord);
-  if (distance > decel_distance)
-    return StateAccelerating::get_instance();
+  if (distance > remaining_deceleration_distance)
+    return {StateAccelerating::get_instance(), dir};
 
-  return StateDecelerating::get_instance();
+  return {StateDecelerating::get_instance(), dir};
 }

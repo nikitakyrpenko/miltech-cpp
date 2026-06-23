@@ -2,7 +2,7 @@
 
 #include <vector>
 
-struct BallisticTable {
+struct BallisticTableDTO {
   struct Result {
     float ammo_time_to_fall;
     float ammo_distance_to_fall;

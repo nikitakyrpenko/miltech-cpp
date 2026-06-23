@@ -4,34 +4,38 @@
 
 #include <optional>
 
-const BallisticSolution FirepointProvider::solve(const Drone& drone, const FallResult& fall, const Coord& target) const
+const BallisticSolution FirepointProvider::solve(const DroneTelemetry& tel,
+                                                 const DroneSpec& spec,
+                                                 const FallResult& fall,
+                                                 const Coord& target) const
 {
-  float ammo_distance_to_fall = fall.distance;
+  const float ammo_distance_to_fall = fall.distance;
+  const Coord pos = tel.get_position();
 
-  float distance = Calc::lenght(target, drone.get_position());
+  const float distance = Calc::lenght(target, pos);
 
-  float remaining_acceleration_distance =
-    (drone.get_attack_speed() * drone.get_attack_speed() - drone.get_current_speed() * drone.get_current_speed()) /
-    (2.0F * drone.acceleration());
+  const float remaining_acceleration_distance =
+    (spec.get_attack_speed() * spec.get_attack_speed() - tel.get_current_speed() * tel.get_current_speed()) /
+    (2.0F * spec.get_acceleration());
 
   if (ammo_distance_to_fall + remaining_acceleration_distance < distance) {
-    float ratio = (distance - ammo_distance_to_fall) / distance;
+    const float ratio = (distance - ammo_distance_to_fall) / distance;
 
-    return {(drone.get_position() + ((target - drone.get_position()) * ratio)), std::nullopt};
+    return {(pos + ((target - pos) * ratio)), std::nullopt};
   }
 
   if (distance == 0.0F) {
-    return {drone.get_position(), std::nullopt};
+    return {pos, std::nullopt};
   }
 
-  float intermediate_ratio = (ammo_distance_to_fall + drone.get_acceleration_path()) / distance;
+  const float intermediate_ratio = (ammo_distance_to_fall + spec.get_acceleration_path()) / distance;
 
   if (intermediate_ratio >= 1.0F) {
-    float direct_ratio = (distance - ammo_distance_to_fall) / distance;
-    return {drone.get_position() + (target - drone.get_position()) * direct_ratio, std::nullopt};
+    const float direct_ratio = (distance - ammo_distance_to_fall) / distance;
+    return {pos + (target - pos) * direct_ratio, std::nullopt};
   }
 
-  Coord intermidiate = target - (target - drone.get_position()) * intermediate_ratio;
+  const Coord intermidiate = target - (target - pos) * intermediate_ratio;
 
   float distance_from_intermidiate_to_target = Calc::lenght(intermidiate, target);
   float ratio = (distance_from_intermidiate_to_target - ammo_distance_to_fall) / distance_from_intermidiate_to_target;

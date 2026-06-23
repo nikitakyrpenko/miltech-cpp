@@ -2,12 +2,15 @@
 
 #include "service/AnalyticalBallisticSolver.hpp"
 #include "service/BallisticSolutionEvaluator.hpp"
-#include "service/FirepointProvider.hpp"
 #include "service/ConfigLoader.hpp"
-#include "service/DroneProvider.hpp"
+#include "service/DronePhysics.hpp"
+#include "service/FirepointProvider.hpp"
 #include "service/MissionProccesor.hpp"
 #include "service/TableBallisticSolver.hpp"
 #include "service/TargetProvider.hpp"
+
+#include "ThreadSafeQueue.hpp"
+#include "models/DroneCommand.hpp"
 
 #include <memory>
 #include <stdexcept>
@@ -37,18 +40,27 @@ std::unique_ptr<IBallisticSolver> make_fall_solver(SolverType type, const std::s
 
 }  // namespace
 
-std::unique_ptr<IMissionProccessor> MissionFactory::create(LoaderType loader_type,
-                                                           SolverType solver_type,
-                                                           const char* config_source,
-                                                           const char* ammo_source,
-                                                           const char* target_source,
-                                                           const char* table_source) const
+SimulationBundle MissionFactory::create(LoaderType loader_type,
+                                        SolverType solver_type,
+                                        const char* config_source,
+                                        const char* ammo_source,
+                                        const char* target_source,
+                                        const char* table_source) const
 {
   std::shared_ptr<IConfigLoader> loader = make_loader(loader_type, config_source, ammo_source, target_source, table_source);
 
-  return std::make_unique<MissionProccessor>(std::make_unique<FirepointProvider>(),
-                                             std::make_unique<TargetProvider>(loader),
-                                             std::make_unique<DroneProvider>(loader),
-                                             std::make_unique<BallisticSolutionEvaluator>(),
-                                             make_fall_solver(solver_type, loader));
+  auto channel = std::make_shared<SynchronizedQueue<DroneCommand>>();
+
+  auto target = std::make_shared<TargetProvider>(loader);
+  auto physics = std::make_shared<DronePhysics>(*loader, channel);
+
+  auto mission = std::make_unique<MissionProccessor>(target,
+                                                     physics,
+                                                     loader,
+                                                     make_fall_solver(solver_type, loader),
+                                                     std::make_unique<FirepointProvider>(),
+                                                     std::make_unique<BallisticSolutionEvaluator>(),
+                                                     channel);
+
+  return SimulationBundle{std::move(target), std::move(physics), std::move(mission)};
 }
