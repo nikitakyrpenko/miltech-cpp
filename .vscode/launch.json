@@ -207,6 +207,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/debug/homework_07/drone_target_cli",
       "args": [
+        "gpiochip4",
+        "24",
+        "/dev/ttyHS1",
         "${workspaceFolder}/homework_07/data/config.json",
         "${workspaceFolder}/homework_07/data/ammo.json",
         "${workspaceFolder}/homework_07/data/targets.json"

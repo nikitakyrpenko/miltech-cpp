@@ -18,8 +18,6 @@
 #include "service/interfaces/IMissionProcessor.hpp"
 #include "service/interfaces/ITargetProvider.hpp"
 #include "service/interfaces/IDronePhysics.hpp"
-#include "service/state/StateStopped.hpp"
-
 #include <atomic>
 #include <latch>
 #include <memory>
@@ -46,7 +44,6 @@ class MissionProccessor : public IMissionProccessor {
   std::shared_ptr<SynchronizedQueue<DroneCommand>> channel_;
 
   const Ammo ammo_;
-  const IState* state_;
 
   Task current_task{-1, {}};
   bool has_visited_intermidiate{false};
@@ -101,7 +98,6 @@ public:
       }
       return Ammo(it->name, it->mass, it->drag, it->lift);
     }())
-    , state_(StateStopped::get_instance())
     , sim_timestep_(config_loader_->get_config().time_step_)
     , timescale_(config_loader_->get_config().timescale)
   {

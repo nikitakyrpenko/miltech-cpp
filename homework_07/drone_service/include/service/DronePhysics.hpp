@@ -51,6 +51,7 @@ public:
   const DroneTelemetry get_telemetry() const override;
   const DroneSpec get_spec() const override;
   const DroneCommand get_active_command() const override;
+  const IState* get_state() const override;
 
   ~DronePhysics() override;
 };

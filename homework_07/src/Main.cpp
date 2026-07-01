@@ -1,16 +1,30 @@
+#include "GpioSignal.hpp"
+#include "ThreadSafeQueue.hpp"
+#include "UartConfigLoader.hpp"
+#include "UartDronePhysics.hpp"
+#include "UartLink.hpp"
 #include "UartTargetProvider.hpp"
 #include "models/SimulationStep.hpp"
-#include "service/MissionFactory.hpp"
+#include "service/AnalyticalBallisticSolver.hpp"
+#include "service/BallisticSolutionEvaluator.hpp"
+#include "service/ConfigLoader.hpp"
+#include "service/FirepointProvider.hpp"
+#include "service/MissionProccesor.hpp"
 
 #include "json.hpp"
 
+#include <chrono>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <latch>
+#include <string>
+#include <thread>
 #include <vector>
-/*
+
 static constexpr int MAX_ITERATIONS = 10000;
+static constexpr unsigned int MISSION_DONE_LINE = 100;
+static constexpr std::chrono::milliseconds MISSION_DONE_PULSE{100};
 
 static void dump_json(const std::vector<SimulationStep>& steps)
 {
@@ -37,55 +51,8 @@ static void dump_json(const std::vector<SimulationStep>& steps)
 
 int main(int argc, char* argv[])
 {
-  if (argc < 4) {
-    std::cerr << "Usage: " << argv[0] << " <config.json> <ammo.json> <targets.json>" << std::endl;
-    return 1;
-  }
-
-  MissionFactory factory;
-
-  SimulationBundle sim;
-  try {
-    sim = factory.create(LoaderType::JSON, SolverType::TABLE, argv[1], argv[2], argv[3], argv[4]);
-  }
-  catch (const std::exception& e) {
-    std::cerr << "Failed to create mission: " << e.what() << std::endl;
-    return 1;
-  }
-
-  std::latch latch{3};
-  sim.target->start(latch);
-  sim.physics->start(latch);
-  sim.mission->start(latch, MAX_ITERATIONS);
-
-  sim.mission->join();  // blocks until the drone reaches the fire point
-
-  sim.target->interrupt();
-  sim.physics->interrupt();
-
-  const std::vector<SimulationStep>& steps = sim.mission->get_steps();
-  dump_json(steps);
-
-  std::cout << "Wrote " << steps.size() << " steps to simulation.json" << std::endl;
-  return 0;
-}
-*/
-
-#include "DroneLink.hpp"
-#include "GpioSignal.hpp"
-#include "ThreadSafeQueue.hpp"
-#include "UartReader.hpp"
-
-#include <chrono>
-#include <iostream>
-#include <latch>
-#include <string>
-#include <thread>
-
-int main(int argc, char* argv[])
-{
-  if (argc < 4) {
-    std::cerr << "Usage: " << argv[0] << " <gpiochip> <start_line> <serial_device>\n";
+  if (argc < 7) {
+    std::cerr << "Usage: " << argv[0] << " <gpiochip> <start_line> <serial_device> <config.json> <ammo.json> <targets.json>\n";
     return 1;
   }
 
@@ -93,23 +60,21 @@ int main(int argc, char* argv[])
   const unsigned int start_line = static_cast<unsigned int>(std::stoul(argv[2]));
   const char* serial = argv[3];
 
-  SynchronizedQueue<dlink::Telemetry> telemetry_q;
-  SynchronizedQueue<dlink::TargetPos> target_q;
-  SynchronizedQueue<dlink::AmmoCfg> ammo_q;
-  SynchronizedQueue<dlink::Result> result_q;
-  SynchronizedQueue<dlink::DroneCfg> cfg_q;
-
   try {
-    UartReader reader(serial, telemetry_q, target_q, ammo_q, result_q, cfg_q);
-    UartTargetProvider target_provider(target_q, 0.1F);
+    ConfigLoader config_loader(argv[4], argv[5], argv[6]);
+    const auto& cfg = config_loader.get_config();
+
+    auto link = std::make_shared<UartLink>(serial);
+    auto target_provider = std::make_shared<UartTargetProvider>(link, cfg.target_timestep);
 
     std::latch latch{2};
-    reader.run(latch);
-    target_provider.start(latch);
+    link->start(latch);
+    target_provider->start(latch);
     std::cout << "listening on " << serial << "\n";
 
     GpioSignal gpio(gpiochip_name);
     gpio.request_output(start_line, 0);
+    gpio.request_output(MISSION_DONE_LINE, 0);
     std::cout << "occupied " << gpiochip_name << " line " << start_line << ", set low\n";
 
     std::cout << "press y + enter to start the checker: ";
@@ -123,30 +88,45 @@ int main(int argc, char* argv[])
     gpio.set_high(start_line);
     std::cout << "set line " << start_line << " high — checker should start sending\n";
 
-    while (true) {
-      if (auto t = telemetry_q.drain_to_last()) {
-        std::cout << "TELEMETRY t_ms=" << t->t_ms << " x=" << t->x << " y=" << t->y << " z=" << t->z << " vx=" << t->vx << " vy=" << t->vy
-                  << " speed=" << t->speed << " dir=" << t->dir << " state=" << static_cast<int>(t->state) << "\n";
-      }
-      if (auto a = ammo_q.drain_to_last()) {
-        std::cout << "AMMO name=" << a->name << " mass=" << a->mass << " drag=" << a->drag << " lift=" << a->lift
-                  << " hitRadius=" << a->hitRadius << " nTargets=" << static_cast<int>(a->nTargets) << "\n";
-      }
-      for (const auto& tg : target_provider.get_targets()) {
-        std::cout << "TARGET id=" << tg.target_id_ << " x=" << tg.pos_.x_ << " y=" << tg.pos_.y_ << "\n";
-      }
-      if (auto r = result_q.drain_to_last()) {
-        std::cout << "RESULT hit=" << static_cast<int>(r->hit) << " targetId=" << static_cast<int>(r->targetId) << " miss_m=" << r->miss_m
-                  << " drop_t_ms=" << r->drop_t_ms << "\n";
-      }
-      if (auto c = cfg_q.drain_to_last()) {
-        std::cout << "CONFIG attackSpeed=" << c->attackSpeed << " accelerationPath=" << c->accelerationPath
-                  << " angularSpeed=" << c->angularSpeed << " turnThreshold=" << c->turnThreshold << " timeStep=" << c->timeStep
-                  << " timeScale=" << c->timeScale << "\n";
-      }
+    std::cout << "waiting for ammo packet...\n";
+    auto uart_config = std::make_shared<UartConfigLoader>(link, cfg);
+    std::cout << "ammo received: " << uart_config->get_config().ammo_ << "\n";
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    auto command_channel = std::make_shared<SynchronizedQueue<DroneCommand>>();
+    auto drone_physics = std::make_shared<UartDronePhysics>(link, *uart_config, command_channel, cfg.physics_timestep);
+
+    std::latch physics_latch{1};
+    drone_physics->start(physics_latch);
+
+    std::cout << "waiting for first telemetry frame...\n";
+    while (!drone_physics->is_ready()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    auto mission = std::make_unique<MissionProccessor>(target_provider,
+                                                        drone_physics,
+                                                        uart_config,
+                                                        std::make_unique<AnalyticalBallisticSolver>(),
+                                                        std::make_unique<FirepointProvider>(),
+                                                        std::make_unique<BallisticSolutionEvaluator>(),
+                                                        command_channel);
+
+    std::latch mission_latch{1};
+    mission->start(mission_latch, MAX_ITERATIONS);
+
+    mission->join();  // blocks until the drone reaches the fire point (or MAX_ITERATIONS)
+
+    gpio.pulse_high(MISSION_DONE_LINE, MISSION_DONE_PULSE);
+    std::cout << "mission complete — pulsed line " << MISSION_DONE_LINE << "\n";
+
+    link->interrupt();
+    target_provider->interrupt();
+    drone_physics->interrupt();
+
+    const std::vector<SimulationStep>& steps = mission->get_steps();
+    dump_json(steps);
+
+    std::cout << "Wrote " << steps.size() << " steps to simulation.json" << std::endl;
   }
   catch (const std::exception& e) {
     std::cerr << "test harness failed: " << e.what() << std::endl;

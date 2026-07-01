@@ -1,8 +1,20 @@
 #include "service/DronePhysics.hpp"
+#include "service/state/StateStopped.hpp"
 
 #include <chrono>
 #include <mutex>
 #include <thread>
+
+static const IState* state_from_mode(DroneMode mode)
+{
+  switch (mode) {
+    case DroneMode::ACCELERATING: return StateAccelerating::get_instance();
+    case DroneMode::DECELERATING: return StateDecelerating::get_instance();
+    case DroneMode::TURNING:      return StateTurning::get_instance();
+    case DroneMode::MOVING:       return StateMoving::get_instance();
+    default:                      return StateStopped::get_instance();
+  }
+}
 
 void DronePhysics::step(const DroneCommand& command, float dt)
 {
@@ -79,6 +91,12 @@ void DronePhysics::start(std::latch& latch)
 const DroneSpec DronePhysics::get_spec() const
 {
   return spec_;
+}
+
+const IState* DronePhysics::get_state() const
+{
+  std::lock_guard<std::mutex> g(command_mtx_);
+  return state_from_mode(command_.state);
 }
 
 const DroneTelemetry DronePhysics::get_telemetry() const

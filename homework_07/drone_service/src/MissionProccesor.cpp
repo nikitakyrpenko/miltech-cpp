@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "Calc.hpp"
 #include "models/Coord.hpp"
 #include "models/DroneCommand.hpp"
 #include "models/DroneTelemetry.hpp"
@@ -131,12 +132,11 @@ void MissionProccessor::step()
   }
 
   const Coord& active = get_active_navigation();
-  const StateDecision next = state_->decide(spec, telemetry, active, should_visit_intermididate());
+  const StateDecision next = drone_physics_->get_state()->decide(spec, telemetry, active, should_visit_intermididate());
 
   channel_->emplace(DroneCommand(next.next_state_->mode(), next.dir));
-  state_ = next.next_state_;
 
-  log_simulation(telemetry, current_task, state_, ammo_parameters, target_provider_->get_target(current_task.id_), active);
+  log_simulation(telemetry, current_task, next.next_state_, ammo_parameters, target_provider_->get_target(current_task.id_), active);
 }
 
 bool MissionProccessor::has_finished()
