@@ -3,6 +3,61 @@
 Усі помітні зміни в цьому репо фіксуються тут.
 Формат - [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/), дати в ISO 8601.
 
+## 2026-06-30
+
+### Added
+
+- Block 5 / Lesson 5.3: додано ROS 2 pub/sub demo `demos/lesson_5_3`
+  з пакетом `robot_telemetry`, запуском через `colcon`, CLI-перевірками graph
+  і сценарієм навмисно зламаного topic name.
+- Block 5 / Lesson 5.3: devcontainer переведено на `osrf/ros:jazzy-desktop`
+  і доповнено ROS 2 інструментами для `colcon`, `ament_auto` та `rqt_graph`.
+
+### Changed
+
+- Block 5 / Lesson 5.3: `status_monitor` друкує стартовий log, а README
+  показує перевірку активного ROS 2 middleware.
+- Block 5 / Lesson 5.3: devcontainer використовує CycloneDDS
+  (`rmw_cyclonedds_cpp`) як default ROS 2 middleware.
+- Block 5 / Lesson 5.3: додано `CYCLONEDDS_URI` config для host-network
+  devcontainer: host interface autodetect, multicast loopback і local peer
+  `127.0.0.1`.
+- Block 5 / Lesson 5.3: devcontainer синхронізує ROS 2 CLI daemon у
+  `postStartCommand`, щоб `ros2 node list` і `ros2 topic list` працювали без
+  додаткових прапорів.
+
+## 2026-06-29
+
+### Added
+
+- Block 5 / Lesson 5.1: додано Docker runtime demos для multi-stage build,
+  `docker build`, `docker run`, volumes і healthcheck.
+
+## 2026-06-26
+
+### Added
+
+- Block 5 / Lesson 5.2 / Homework 12: додано стартовий C2-сервiс для НРК,
+  ArduRover SITL compose stack, QGC-маршрут бiля Лимана та `edge/docker-compose.yml`
+  з готовим `auto_stub` для Guided-сценарiю.
+
+## 2026-05-17
+
+### Added
+
+- Block 2 / Lesson 2.6: додано `docs/code-quality.md` з базовими командами
+  для запуску `clang-format`, `cmake-format`, `clang-tidy`, налаштуванням
+  VS Code auto-format, optional VS Code task для `clang-tidy` і правилами
+  точкового використання `NOLINT` без wrapper scripts.
+
+## 2026-05-08
+
+### Changed
+
+- Block 2 / Lesson 2.6: послаблено `.clang-tidy` для ДЗ 6. Зауваження static
+  analyzer лишаються помилками, а style/modernize/core-guidelines сигнали
+  лишаються warning-ами для ручного розбору.
+
 ## 2026-04-30
 
 ### Added

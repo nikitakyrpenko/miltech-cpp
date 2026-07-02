@@ -36,6 +36,14 @@
     ".devcontainer/scripts/initialize"
   ],
 
+  // ROS 2 CLI daemon синхронізується з поточним CycloneDDS profile:
+  // прибрати завислий daemon, стартувати daemon заново і перевірити,
+  // що CLI graph-команди відповідають.
+  "postStartCommand": [
+    "bash",
+    ".devcontainer/scripts/post-start"
+  ],
+
   // host network спрощує SSH/debug сценарії для занять з target-пристроями.
   // SYS_PTRACE і seccomp=unconfined потрібні для стабільної роботи GDB
   // всередині контейнера, особливо коли debug-сесія attach-иться до процесу.
@@ -79,7 +87,6 @@
         // C++ language server-ів одночасно. Основний engine - clangd.
         "C_Cpp.intelliSenseEngine": "disabled",
         "[cpp]": {
-          "editor.formatOnSave": true,
           "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
           "editor.quickSuggestions": {
             "other": "on",
@@ -88,7 +95,6 @@
           }
         },
         "[cmake]": {
-          "editor.formatOnSave": true,
           "editor.defaultFormatter": "cheshirekow.cmake-format"
         },
         // cmake-format читає конфіг, який Dockerfile копіює в /.
