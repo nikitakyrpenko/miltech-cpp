@@ -6,10 +6,9 @@
 #include <thread>
 
 class ScheduledWorker : public ThreadWorker {
-  float idle_;
-
 protected:
   virtual void tick() = 0;
+  float idle_;
 
   void run_loop() override
   {

@@ -1,4 +1,5 @@
 #include "UartTargetProvider.hpp"
+#include "ScheduledWorker.hpp"
 #include "UartLink.hpp"
 
 UartTargetProvider::UartTargetProvider(std::shared_ptr<UartLink> link, float idle)
@@ -10,29 +11,25 @@ UartTargetProvider::UartTargetProvider(std::shared_ptr<UartLink> link, float idl
 
 void UartTargetProvider::update_target(const dlink::TargetPos& pos)
 {
-  const auto now = std::chrono::steady_clock::now();
   const Coord coord{pos.x, pos.y};
 
   std::lock_guard<std::mutex> l(mtx_);
 
   auto it = targets_.find(pos.id);
   if (it == targets_.end()) {
-    targets_.emplace(pos.id, TrackedTarget{Target{pos.id, coord, Coord{0.F, 0.F}}, now});
+    targets_.emplace(pos.id, Target{pos.id, coord, Coord{0.F, 0.F}});
     return;
   }
 
-  const float dt = std::chrono::duration<float>(now - it->second.last_seen).count();
+  const Coord velocity = (coord - it->second.pos_) / ScheduledWorker::idle_;
 
-  const Coord velocity = (dt > 0.F) ? (coord - it->second.target.pos_) / dt : Coord{0.F, 0.F};
-
-  it->second.target = Target{pos.id, coord, velocity};
-  it->second.last_seen = now;
+  it->second = Target{pos.id, coord, velocity};
 }
 
 const Target UartTargetProvider::get_target(int id) const
 {
   std::lock_guard<std::mutex> l(mtx_);
-  return targets_.at(id).target;
+  return targets_.at(id);
 }
 
 std::vector<Target> UartTargetProvider::get_targets() const
@@ -42,7 +39,7 @@ std::vector<Target> UartTargetProvider::get_targets() const
   std::vector<Target> out;
   out.reserve(targets_.size());
   for (const auto& [id, tracked] : targets_) {
-    out.push_back(tracked.target);
+    out.push_back(tracked);
   }
   return out;
 }

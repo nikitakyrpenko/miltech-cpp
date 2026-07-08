@@ -15,8 +15,8 @@ struct ConfigDTO {
   std::string ammo_;
   float target_array_timestep_;
   float time_step_;
-  float physics_timestep;
-  float target_timestep;
+  float physics_timestep{0.1F};
+  float target_timestep{0.2F};
   float timescale;
   float hit_radius_;
 };

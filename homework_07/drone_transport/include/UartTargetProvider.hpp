@@ -11,14 +11,9 @@
 #include <mutex>
 
 class UartTargetProvider : public ITargetProvider, public ScheduledWorker {
-  struct TrackedTarget {
-    Target target;
-    std::chrono::steady_clock::time_point last_seen;
-  };
-
   std::shared_ptr<UartLink> link_;
   SynchronizedQueue<dlink::TargetPos>& target_channel_;
-  std::map<int, TrackedTarget> targets_{};
+  std::map<int, Target> targets_{};
   mutable std::mutex mtx_;
 
   void update_target(const dlink::TargetPos& pos);
