@@ -33,12 +33,8 @@ public:
     : channel_(std::move(channel))
     , physics_time_step(c.get_config().physics_timestep)
     , timescale_(c.get_config().timescale)
-    , telemetry_(c.get_config().position_, c.get_config().initial_direction_)
-    , spec_(c.get_config().altitude_,
-            c.get_config().attack_speed_,
-            c.get_config().acceleration_path_,
-            c.get_config().angular_speed_,
-            c.get_config().turn_threshold_)
+    , telemetry_(c.get_config().position_, c.get_config().initial_direction_, c.get_config().altitude_)
+    , spec_(c.get_config().attack_speed_, c.get_config().acceleration_path_, c.get_config().angular_speed_, c.get_config().turn_threshold_)
     , running_(true)
   {
   }

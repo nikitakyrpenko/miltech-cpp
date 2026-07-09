@@ -6,7 +6,7 @@
 
 struct ConfigDTO {
   Coord position_;
-  float altitude_;
+  float altitude_{100.F};
   float initial_direction_;
   float attack_speed_;
   float acceleration_path_;

@@ -66,6 +66,7 @@ void MissionProccessor::log_simulation(
                             active,
                             tel.get_position() + heading * ap.distance,
                             tar.approximate(current_task.time_taken + ap.time),
+                            tar.pos_,
                             tel.elapsed()};
 
   // std::cout << "[step " << steps_.size() << "] target=" << step.target_id_ << " state=" << step.state_ << " pos=(" << step.position_.x_
@@ -85,7 +86,11 @@ void MissionProccessor::step()
   const DroneSpec spec = drone_physics_->get_spec();
 
   const auto targets = target_provider_->get_targets();
-  const auto ammo_parameters = ballistic_solver_->fall(ammo_, spec.get_altitude(), spec.get_attack_speed());
+  const auto ammo_parameters = ballistic_solver_->fall(ammo_, telemetry.get_altitude(), spec.get_attack_speed());
+
+  std::cout << "[MissionProccessor] ammo=" << ammo_.get_name() << " mass=" << ammo_.get_mass() << " drag=" << ammo_.get_drag()
+            << " lift=" << ammo_.get_lift() << " altitude=" << telemetry.get_altitude() << " attack_speed=" << spec.get_attack_speed()
+            << " -> fall.time=" << ammo_parameters.time << " fall.distance=" << ammo_parameters.distance << std::endl;
 
   // clang-format off
 
@@ -149,7 +154,8 @@ bool MissionProccessor::has_finished()
   const Coord& before = steps_.at(steps_.size() - 2).position_;
 
   return !should_visit_intermididate() &&
-         has_point_visited(current_task.solution_.fire_, before, now, drone_physics_->get_spec().get_attack_speed() * sim_timestep_);
+         has_point_visited(
+           current_task.solution_.fire_, before, now, drone_physics_->get_spec().get_attack_speed() * (sim_timestep_ + COMMAND_LATENCY));
 }
 
 void MissionProccessor::start(std::latch& latch, int max_iterations)

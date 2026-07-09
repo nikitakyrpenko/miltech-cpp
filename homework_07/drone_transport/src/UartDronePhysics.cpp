@@ -8,12 +8,11 @@ UartDronePhysics::UartDronePhysics(std::shared_ptr<UartLink> link,
                                    const IConfigLoader& config_loader,
                                    std::shared_ptr<SynchronizedQueue<DroneCommand>> command_channel,
                                    float poll_period)
-  : ScheduledWorker(poll_period)
+  : ScheduledWorker(0.05F)
   , link_(std::move(link))
   , telemetry_channel_(link_->telemetry_channel())
   , command_channel_(std::move(command_channel))
-  , spec_(config_loader.get_config().altitude_,
-          config_loader.get_config().attack_speed_,
+  , spec_(config_loader.get_config().attack_speed_,
           config_loader.get_config().acceleration_path_,
           config_loader.get_config().angular_speed_,
           config_loader.get_config().turn_threshold_)
@@ -40,12 +39,13 @@ void UartDronePhysics::apply(const dlink::Telemetry& t)
 {
   std::lock_guard<std::mutex> l(tel_mtx_);
   if (!telemetry_.has_value()) {
-    telemetry_.emplace(Coord{t.x, t.y}, t.dir);
+    telemetry_.emplace(Coord{t.x, t.y}, t.dir, t.z);
   }
   telemetry_->set_position(Coord{t.x, t.y});
   telemetry_->set_current_speed(t.speed);
   telemetry_->set_current_direction(t.dir);
   telemetry_->set_elapsed(static_cast<float>(t.t_ms) / 1000.0F);
+  telemetry_->set_altitude(t.z);
 }
 
 dlink::Control UartDronePhysics::to_control(const DroneCommand& cmd) const

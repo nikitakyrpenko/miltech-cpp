@@ -30,6 +30,7 @@
 
 constexpr float SWITCH_FACTOR = 0.5F;
 constexpr float LOCK_FACTOR = 2.0F;
+constexpr float COMMAND_LATENCY = 0.15F;  // measured GPIO/UART round-trip from fire decision to actual release
 
 class MissionProccessor : public IMissionProccessor {
   // internal dependencies

@@ -6,12 +6,11 @@
 #include "UartTargetProvider.hpp"
 #include "models/SimulationStep.hpp"
 #include "service/BallisticSolutionEvaluator.hpp"
-#include "service/ConfigLoader.hpp"
 #include "service/FirepointProvider.hpp"
 #include "service/MissionProccesor.hpp"
 
 #include "json.hpp"
-#include "service/TableBallisticSolver.hpp"
+#include "service/AnalyticalBallisticSolver.hpp"
 
 #include <chrono>
 #include <exception>
@@ -42,6 +41,7 @@ static void dump_json(const std::vector<SimulationStep>& steps)
       {"dropPoint", {{"x", s.drop_point_.x_}, {"y", s.drop_point_.y_}}},
       {"aimPoint", {{"x", s.aim_point_.x_}, {"y", s.aim_point_.y_}}},
       {"predictedTarget", {{"x", s.predicted_target_.x_}, {"y", s.predicted_target_.y_}}},
+      {"targetPosition", {{"x", s.target_position_.x_}, {"y", s.target_position_.y_}}},
       {"timeSecSinceStart", s.elapsed_},
     });
   }
@@ -66,11 +66,7 @@ int main(int argc, char* argv[])
     auto link = std::make_shared<UartLink>(serial);
     link->start(la);
 
-    auto stub_cl = std::make_shared<ConfigLoader>("homework_07/data/config.json",
-                                                  "homework_07/data/ammo.json",
-                                                  "homework_07/data/targets.json",
-                                                  "homework_07/data/ballistic_table.txt");
-    auto tbs = std::make_unique<TableBallisticSolver>(stub_cl);
+    auto abs = std::make_unique<AnalyticalBallisticSolver>();
 
     GpioSignal gpio(gpiochip_name);
     gpio.request_output(start_line, 0);
@@ -111,7 +107,7 @@ int main(int argc, char* argv[])
     auto mission = std::make_unique<MissionProccessor>(target_provider,
                                                        drone_physics,
                                                        uart_config,
-                                                       std::move(tbs),
+                                                       std::move(abs),
                                                        std::make_unique<FirepointProvider>(),
                                                        std::make_unique<BallisticSolutionEvaluator>(),
                                                        command_channel);
