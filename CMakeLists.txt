@@ -20,4 +20,7 @@ add_subdirectory(homework_05)
 
 enable_testing()
 add_subdirectory(homework_06)
-add_subdirectory(homework_12/edge/c2)
+
+if(NOT CMAKE_CROSSCOMPILING)
+    add_subdirectory(homework_12/edge/c2)
+endif()
