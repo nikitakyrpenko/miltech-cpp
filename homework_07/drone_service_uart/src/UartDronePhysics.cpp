@@ -1,4 +1,4 @@
-#include "UartDronePhysics.hpp"
+#include "service/UartDronePhysics.hpp"
 #include "ScheduledWorker.hpp"
 #include "UartLink.hpp"
 #include "service/interfaces/IConfigLoader.hpp"
@@ -10,7 +10,7 @@
 #include <utility>
 
 UartDronePhysics::UartDronePhysics(std::shared_ptr<UartLink> uart_link, std::shared_ptr<IConfigLoader> config_loader)
-  : ScheduledWorker(config_loader->get_config().physics_timestep)
+  : ScheduledWorker(config_loader->get_config().physics_timestep / config_loader->get_config().timescale)
   , uart_link_(std::move(uart_link))
   , config_loader_(std::move(config_loader))
   , telemetry_channel_(uart_link_->telemetry_channel())
@@ -57,8 +57,8 @@ dlink::Control UartDronePhysics::to_control(const DroneCommand& cmd) const
 
   const float accel = (cmd.state == DroneMode::ACCELERATING || cmd.state == DroneMode::MOVING) ? 1.0F : -1.0F;
 
-  const float linear_range = spec_.get_angular_speed() * ScheduledWorker::idle_;
-  const float turn_rate = std::clamp(delta / linear_range, -1.0F, 1.0F);
+  const float turn_magnitude = spec_.get_angular_speed() * ScheduledWorker::idle_;
+  const float turn_rate = std::clamp(delta / turn_magnitude, -1.0F, 1.0F);
 
   return {accel, turn_rate};
 }

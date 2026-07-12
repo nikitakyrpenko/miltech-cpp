@@ -105,7 +105,7 @@ void MissionProccessor::step()
   auto view =
     targets |
     std::views::transform([&](const Target& t) { return std::pair{t, score(t.target_id_, t.pos_, telemetry, spec, ammo_parameters)}; }) |
-    std::views::filter([&](const auto& p) { return is_task_possible(p.second); }) | 
+    std::views::filter([&](const auto& p) { return is_task_possible(p.second); }) |
     std::views::transform([&](const auto& p) {
       const auto& [target, task] = p;
       return score(target.target_id_, target.approximate(task.time_taken + ammo_parameters.time), telemetry, spec, ammo_parameters);

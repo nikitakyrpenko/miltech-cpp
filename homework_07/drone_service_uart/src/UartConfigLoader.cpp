@@ -1,4 +1,4 @@
-#include "UartConfigLoader.hpp"
+#include "service/UartConfigLoader.hpp"
 
 #include <optional>
 #include <stdexcept>
@@ -72,17 +72,4 @@ const AmmoDTO& UartConfigLoader::get_arsenal() const
 const TargetDTO& UartConfigLoader::get_targets() const
 {
   throw std::logic_error("not available in UART mode");
-}
-
-const BallisticTableDTO& UartConfigLoader::get_table() const
-{
-  if (!table_) {
-    throw std::logic_error("ballistic table not loaded — call set_table() first");
-  }
-  return *table_;
-}
-
-void UartConfigLoader::set_table(BallisticTableDTO table)
-{
-  table_ = std::move(table);
 }

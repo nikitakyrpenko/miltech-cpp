@@ -1,4 +1,4 @@
-#include "UartTargetProvider.hpp"
+#include "service/UartTargetProvider.hpp"
 #include "ScheduledWorker.hpp"
 #include "UartLink.hpp"
 
@@ -6,7 +6,7 @@
 #include <utility>
 
 UartTargetProvider::UartTargetProvider(std::shared_ptr<UartLink> link, std::shared_ptr<IConfigLoader> config_loader)
-  : ScheduledWorker(config_loader->get_config().target_timestep)
+  : ScheduledWorker(config_loader->get_config().target_timestep / config_loader->get_config().timescale)
   , uart_link_(std::move(link))
   , config_loader_(std::move(config_loader))
   , target_channel_(uart_link_->target_channel())

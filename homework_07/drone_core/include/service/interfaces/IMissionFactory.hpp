@@ -2,7 +2,7 @@
 
 #include "service/SimulationBundle.hpp"
 
-enum class LoaderType { JSON };
+enum class LoaderType { JSON, UART };
 enum class SolverType { ANALYTICAL, TABLE };
 
 class IMissionFactory {

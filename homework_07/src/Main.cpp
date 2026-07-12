@@ -1,28 +1,18 @@
 #include "GpioSignal.hpp"
-#include "UartConfigLoader.hpp"
-#include "UartDronePhysics.hpp"
-#include "UartLink.hpp"
-#include "UartTargetProvider.hpp"
 #include "models/SimulationStep.hpp"
-#include "service/BallisticSolutionEvaluator.hpp"
-#include "service/FirepointProvider.hpp"
-#include "service/MissionProccesor.hpp"
+#include "service/MissionFactory.hpp"
 
 #include "json.hpp"
-#include "service/BallisticTableLoader.hpp"
-#include "service/TableBallisticSolver.hpp"
 
 #include <chrono>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <latch>
-#include <memory>
 #include <string>
 #include <vector>
 
 static constexpr int MAX_ITERATIONS = 10000;
-static constexpr unsigned int MISSION_DONE_LINE = 100;
 static constexpr std::chrono::milliseconds MISSION_DONE_PULSE{100};
 static constexpr const char* BALLISTIC_TABLE_PATH = "homework_07/data/ballistic_table.txt";
 
@@ -65,29 +55,20 @@ static void dump_json(const std::vector<SimulationStep>& steps)
 
 int main(int argc, char* argv[])
 {
-  if (argc < 3) {
-    std::cerr << "Usage: " << argv[0] << " <gpiochip> <start_line> <serial_device>\n";
+  if (argc < 5) {
+    std::cerr << "Usage: " << argv[0] << " <gpiochip> <serial_device> <start_line> <end_line>\n";
     return 1;
   }
 
   const char* gpiochip_name = argv[1];
-  const unsigned int start_line = static_cast<unsigned int>(std::stoul(argv[2]));
-  const char* serial = argv[3];
+  const char* serial = argv[2];
+  const unsigned int start_line = static_cast<unsigned int>(std::stoul(argv[3]));
+  const unsigned int end_line = static_cast<unsigned int>(std::stoul(argv[4]));
 
   try {
-    std::latch la{1};
-    auto link = std::make_shared<UartLink>(serial);
-    link->start(la);
-
-    auto table = load_ballistic_table(BALLISTIC_TABLE_PATH);
-    if (!table) {
-      std::cerr << "failed to parse ballistic table from " << BALLISTIC_TABLE_PATH << "\n";
-      return 1;
-    }
-
     GpioSignal gpio(gpiochip_name);
     gpio.request_output(start_line, 0);
-    gpio.request_output(MISSION_DONE_LINE, 0);
+    gpio.request_output(end_line, 0);
     std::cout << "occupied " << gpiochip_name << " line " << start_line << ", set low\n";
 
     std::cout << "press y + enter to start the checker: ";
@@ -102,43 +83,19 @@ int main(int argc, char* argv[])
     std::cout << "set line " << start_line << " high — checker should start sending\n";
 
     std::cout << "waiting for ammo, config and telemetry packets...\n";
-    std::latch config_start{1};
-    auto uart_config = std::make_shared<UartConfigLoader>(link);
-    uart_config->start(config_start);
-    uart_config->wait_ready();
-    uart_config->set_table(std::move(*table));
-    std::cout << "ammo received: " << uart_config->get_config().ammo_ << "\n";
-    auto abs = std::make_unique<TableBallisticSolver>(uart_config);
-    auto target_provider = std::make_shared<UartTargetProvider>(link, uart_config);
-
-    std::latch latch{2};
-    target_provider->start(latch);
+    MissionFactory factory;
+    SimulationBundle sim = factory.create(LoaderType::UART, SolverType::TABLE, serial, nullptr, nullptr, BALLISTIC_TABLE_PATH);
     std::cout << "listening on " << serial << "\n";
 
-    auto drone_physics = std::make_shared<UartDronePhysics>(link, uart_config);
-
-    drone_physics->start(latch);
-
-    auto mission = std::make_unique<MissionProccessor>(target_provider,
-                                                       drone_physics,
-                                                       uart_config,
-                                                       std::move(abs),
-                                                       std::make_unique<FirepointProvider>(),
-                                                       std::make_unique<BallisticSolutionEvaluator>());
-
     std::latch mission_latch{1};
-    mission->start(mission_latch, MAX_ITERATIONS);
+    sim.mission->start(mission_latch, MAX_ITERATIONS);
 
-    mission->join();  // blocks until the drone reaches the fire point (or MAX_ITERATIONS)
+    sim.mission->join();  // blocks until the drone reaches the fire point (or MAX_ITERATIONS)
 
-    gpio.pulse_high(MISSION_DONE_LINE, MISSION_DONE_PULSE);
-    std::cout << "mission complete — pulsed line " << MISSION_DONE_LINE << "\n";
+    gpio.pulse_high(end_line, MISSION_DONE_PULSE);
+    std::cout << "mission complete — pulsed line " << end_line << "\n";
 
-    link->interrupt();
-    target_provider->interrupt();
-    drone_physics->interrupt();
-
-    const std::vector<SimulationStep>& steps = mission->get_steps();
+    const std::vector<SimulationStep>& steps = sim.mission->get_steps();
     dump_json(steps);
 
     std::cout << "Wrote " << steps.size() << " steps to simulation.json" << std::endl;

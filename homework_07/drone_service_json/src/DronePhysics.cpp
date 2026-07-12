@@ -1,9 +1,7 @@
 #include "service/DronePhysics.hpp"
 #include "service/state/StateStopped.hpp"
 
-#include <chrono>
 #include <mutex>
-#include <thread>
 
 static const IState* state_from_mode(DroneMode mode)
 {
@@ -62,35 +60,17 @@ void DronePhysics::step(float dt)
   telemetry_.set_elapsed(telemetry_.elapsed() + dt);
 }
 
-void DronePhysics::interrupt()
+void DronePhysics::tick()
 {
-  running_ = false;
-}
-
-void DronePhysics::start(std::latch& latch)
-{
-  running_ = true;
-  worker_ = std::thread([this, &latch]() {
-    latch.arrive_and_wait();
-
-    using clock = std::chrono::steady_clock;
-    const auto period = std::chrono::duration_cast<clock::duration>(std::chrono::duration<float>(physics_time_step / timescale_));
-
-    auto next = clock::now();
-    while (running_) {
-      if (channel_.size() > 0) {
-        std::lock_guard<std::mutex> command_guard(command_mtx_);
-        if (auto command = channel_.drain_to_last())
-          command_ = *command;
-      }
-      {
-        std::lock_guard<std::mutex> telemetry_guard(tel_mtx_);
-        step(physics_time_step);
-      }
-      next += period;
-      std::this_thread::sleep_until(next);
-    }
-  });
+  if (channel_.size() > 0) {
+    std::lock_guard<std::mutex> command_guard(command_mtx_);
+    if (auto command = channel_.drain_to_last())
+      command_ = *command;
+  }
+  {
+    std::lock_guard<std::mutex> telemetry_guard(tel_mtx_);
+    step(physics_time_step);
+  }
 }
 
 void DronePhysics::submit_command(const DroneCommand& command) const
@@ -119,13 +99,4 @@ const DroneCommand DronePhysics::get_active_command() const
 {
   std::lock_guard<std::mutex> command_guard(command_mtx_);
   return command_;
-}
-
-DronePhysics::~DronePhysics()
-{
-  interrupt();
-
-  if (worker_.joinable()) {
-    worker_.join();
-  }
 }

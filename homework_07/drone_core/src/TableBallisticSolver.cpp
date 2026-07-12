@@ -49,7 +49,7 @@ std::size_t flat_index(const BallisticTableDTO& t, int iz, int iv, int im, int i
 
 FallResult TableBallisticSolver::fall(const Ammo& ammo, float altitude, float speed) const
 {
-  const BallisticTableDTO& t = loader_->get_table();
+  const BallisticTableDTO& t = table_;
 
   const Interp iz = find_interp(altitude, t.z);
   const Interp iv = find_interp(speed, t.v);

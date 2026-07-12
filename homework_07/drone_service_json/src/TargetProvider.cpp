@@ -5,9 +5,7 @@
 #include <chrono>
 #include <cmath>
 #include <iterator>
-#include <latch>
 #include <mutex>
-#include <thread>
 #include <vector>
 #include "models/Coord.hpp"
 #include "models/Target.hpp"
@@ -27,11 +25,6 @@ std::vector<Target> TargetProvider::get_targets() const
 int TargetProvider::get_size() const
 {
   return number_of_targets_;
-}
-
-void TargetProvider::interrupt()
-{
-  running_ = false;
 }
 
 void TargetProvider::update_targets(const std::chrono::time_point<std::chrono::steady_clock>& start,
@@ -55,30 +48,11 @@ void TargetProvider::update_targets(const std::chrono::time_point<std::chrono::s
   }
 }
 
-void TargetProvider::start(std::latch& latch)
+void TargetProvider::tick()
 {
-  running_ = true;
-
-  worker_ = std::thread([this, &latch]() {
-    latch.arrive_and_wait();
-
-    using clock = std::chrono::steady_clock;
-    const auto period = std::chrono::duration_cast<clock::duration>(std::chrono::duration<float>(scheduler_timestep_ / timescale_));
-
-    const auto start = clock::now();
-    auto next = start + period;
-    while (running_) {
-      update_targets(start, clock::now());
-      std::this_thread::sleep_until(next);
-      next += period;
-    }
-  });
-}
-
-TargetProvider::~TargetProvider()
-{
-  interrupt();
-  if (worker_.joinable()) {
-    worker_.join();
+  if (!started_) {
+    start_ = std::chrono::steady_clock::now();
+    started_ = true;
   }
+  update_targets(start_, std::chrono::steady_clock::now());
 }

@@ -1,16 +1,16 @@
 #pragma once
 
-#include "service/interfaces/IConfigLoader.hpp"
+#include "dto/BallisticTableDTO.hpp"
 #include "service/interfaces/IBallisticSolver.hpp"
 
-#include <memory>
+#include <utility>
 
 class TableBallisticSolver : public IBallisticSolver {
-  std::shared_ptr<IConfigLoader> loader_;
+  BallisticTableDTO table_;
 
 public:
-  TableBallisticSolver(std::shared_ptr<IConfigLoader> loader)
-    : loader_(std::move(loader))
+  explicit TableBallisticSolver(BallisticTableDTO table)
+    : table_(std::move(table))
   {
   }
 

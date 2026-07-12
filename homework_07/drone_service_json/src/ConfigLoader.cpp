@@ -1,7 +1,6 @@
 #include "json.hpp"
 
 #include "models/Coord.hpp"
-#include "service/BallisticTableLoader.hpp"
 #include "service/ConfigLoader.hpp"
 
 #include <fstream>
@@ -108,11 +107,10 @@ std::unique_ptr<AmmoDTO> parse_arsenal(const char* source)
 }
 }  // namespace
 
-ConfigLoader::ConfigLoader(const char* config_source, const char* ammo_source, const char* target_source, const char* table_source)
+ConfigLoader::ConfigLoader(const char* config_source, const char* ammo_source, const char* target_source)
   : config_(parse_config(config_source))
   , arsenal_(parse_arsenal(ammo_source))
   , targets_(parse_targets(target_source))
-  , table_(load_ballistic_table(table_source))
 {
   if (!config_) {
     throw std::runtime_error("ConfigLoader: cannot parse config source");
@@ -124,10 +122,6 @@ ConfigLoader::ConfigLoader(const char* config_source, const char* ammo_source, c
 
   if (!targets_) {
     throw std::runtime_error("ConfigLoader: cannot parse targets source");
-  }
-
-  if (table_source != nullptr && *table_source != '\0' && !table_) {
-    throw std::runtime_error("ConfigLoader: cannot parse table source");
   }
 }
 

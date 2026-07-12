@@ -4,13 +4,10 @@ find_path(GPIOD_INCLUDE_DIR gpiod.h REQUIRED)
 add_library(drone_transport STATIC
     src/UartPort.cpp
     src/UartLink.cpp
-    src/UartConfigLoader.cpp
-    src/UartTargetProvider.cpp
-    src/UartDronePhysics.cpp
 )
 
 target_include_directories(drone_transport PUBLIC include ${GPIOD_INCLUDE_DIR})
-target_link_libraries(drone_transport PUBLIC drone_model drone_utils drone_service ${GPIOD_LIBRARY})
+target_link_libraries(drone_transport PUBLIC drone_model drone_utils ${GPIOD_LIBRARY})
 
 if(BUILD_TESTS AND NOT CMAKE_CROSSCOMPILING)
     # test sources are gitignored/untracked; only build the test target if they exist locally

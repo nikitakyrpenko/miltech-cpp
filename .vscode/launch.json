@@ -208,8 +208,9 @@
       "program": "${workspaceFolder}/build/debug/homework_07/drone_target_cli",
       "args": [
         "gpiochip4",
+        "/dev/ttyHS1",
         "24",
-        "/dev/ttyHS1"
+        "100"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

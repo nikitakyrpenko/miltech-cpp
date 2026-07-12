@@ -1,18 +1,20 @@
 #include "service/BallisticTableLoader.hpp"
 
 #include <fstream>
+#include <stdexcept>
 
-std::unique_ptr<BallisticTableDTO> load_ballistic_table(const char* source)
+BallisticTableDTO load_ballistic_table(const char* source)
 {
-  if (source == nullptr || *source == '\0') {  // table not requested
-    return nullptr;
+  if (source == nullptr || *source == '\0') {
+    throw std::runtime_error("load_ballistic_table: no table source given");
+  }
+
+  std::ifstream f(source);
+  if (!f.is_open()) {
+    throw std::runtime_error("load_ballistic_table: cannot open table source");
   }
 
   BallisticTableDTO table;
-
-  std::ifstream f(source);
-  if (!f.is_open())
-    return nullptr;
 
   int nZ, nV, nM, nD, nL;
   f >> nZ >> nV >> nM >> nD >> nL;
@@ -33,6 +35,10 @@ std::unique_ptr<BallisticTableDTO> load_ballistic_table(const char* source)
   for (auto& v : table.l)
     f >> v;
 
+  if (!f) {
+    throw std::runtime_error("load_ballistic_table: malformed table source");
+  }
+
   size_t total = (size_t)nZ * nV * nM * nD * nL;
   table.data.resize(total);
 
@@ -40,5 +46,9 @@ std::unique_ptr<BallisticTableDTO> load_ballistic_table(const char* source)
     f >> table.data[i].ammo_time_to_fall >> table.data[i].ammo_distance_to_fall;
   }
 
-  return std::make_unique<BallisticTableDTO>(std::move(table));
+  if (!f) {
+    throw std::runtime_error("load_ballistic_table: malformed table source");
+  }
+
+  return table;
 }
