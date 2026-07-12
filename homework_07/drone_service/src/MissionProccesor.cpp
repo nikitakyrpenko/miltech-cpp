@@ -54,8 +54,13 @@ const Task& MissionProccessor::select_task(const DroneTelemetry& telemetry, cons
   return (lock_in || !beat_margin) ? *current : optimal;
 }
 
-void MissionProccessor::log_simulation(
-  const DroneTelemetry& tel, const Task& tsk, const IState* s, const FallResult& ap, const Target& tar, const Coord& active)
+void MissionProccessor::log_simulation(const DroneTelemetry& tel,
+                                       const Task& tsk,
+                                       const IState* s,
+                                       const FallResult& ap,
+                                       const Target& tar,
+                                       const Coord& active,
+                                       const std::vector<Target>& all_targets)
 {
   const Coord heading{std::cos(tel.get_current_direction()), std::sin(tel.get_current_direction())};
 
@@ -67,7 +72,14 @@ void MissionProccessor::log_simulation(
                             tel.get_position() + heading * ap.distance,
                             tar.approximate(current_task.time_taken + ap.time),
                             tar.pos_,
-                            tel.elapsed()};
+                            tel.elapsed(),
+                            tel.get_current_speed(),
+                            ammo_.get_mass(),
+                            ammo_.get_drag(),
+                            ammo_.get_lift(),
+                            ap.time,
+                            ap.distance,
+                            all_targets};
 
   // std::cout << "[step " << steps_.size() << "] target=" << step.target_id_ << " state=" << step.state_ << " pos=(" << step.position_.x_
   //          << ", " << step.position_.y_ << ")" << " drop=(" << step.drop_point_.x_ << ", " << step.drop_point_.y_ << ")\n";
@@ -87,10 +99,6 @@ void MissionProccessor::step()
 
   const auto targets = target_provider_->get_targets();
   const auto ammo_parameters = ballistic_solver_->fall(ammo_, telemetry.get_altitude(), spec.get_attack_speed());
-
-  std::cout << "[MissionProccessor] ammo=" << ammo_.get_name() << " mass=" << ammo_.get_mass() << " drag=" << ammo_.get_drag()
-            << " lift=" << ammo_.get_lift() << " altitude=" << telemetry.get_altitude() << " attack_speed=" << spec.get_attack_speed()
-            << " -> fall.time=" << ammo_parameters.time << " fall.distance=" << ammo_parameters.distance << std::endl;
 
   // clang-format off
 
@@ -114,6 +122,7 @@ void MissionProccessor::step()
     const Task& optimal = select_task(telemetry, tasks);
     if (optimal.id_ == current_task.id_) {
       current_task.solution_ = optimal.solution_;
+      current_task.time_taken = optimal.time_taken;
     }
     else {
       // if new target has intermididate flush the navigation flag
@@ -139,9 +148,10 @@ void MissionProccessor::step()
   const Coord& active = get_active_navigation();
   const StateDecision next = drone_physics_->get_state()->decide(spec, telemetry, active, should_visit_intermididate());
 
-  channel_->emplace(DroneCommand(next.next_state_->mode(), next.dir));
+  drone_physics_->submit_command(DroneCommand(next.next_state_->mode(), next.dir));
 
-  log_simulation(telemetry, current_task, next.next_state_, ammo_parameters, target_provider_->get_target(current_task.id_), active);
+  log_simulation(
+    telemetry, current_task, next.next_state_, ammo_parameters, target_provider_->get_target(current_task.id_), active, targets);
 }
 
 bool MissionProccessor::has_finished()
@@ -169,7 +179,8 @@ void MissionProccessor::start(std::latch& latch, int max_iterations)
     const auto period = std::chrono::duration_cast<clock::duration>(std::chrono::duration<float>(sim_timestep_ / timescale_));
 
     auto next = clock::now();
-    for (int iter = 0; running_ && iter < max_iterations && !has_finished(); ++iter) {
+    const auto deadline = next + MISSION_TIMEOUT;
+    for (int iter = 0; running_ && iter < max_iterations && clock::now() < deadline && !has_finished(); ++iter) {
       step();
       next += period;
       std::this_thread::sleep_until(next);

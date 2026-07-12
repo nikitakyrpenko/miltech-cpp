@@ -1,5 +1,4 @@
 #include "GpioSignal.hpp"
-#include "ThreadSafeQueue.hpp"
 #include "UartConfigLoader.hpp"
 #include "UartDronePhysics.hpp"
 #include "UartLink.hpp"
@@ -10,7 +9,8 @@
 #include "service/MissionProccesor.hpp"
 
 #include "json.hpp"
-#include "service/AnalyticalBallisticSolver.hpp"
+#include "service/BallisticTableLoader.hpp"
+#include "service/TableBallisticSolver.hpp"
 
 #include <chrono>
 #include <exception>
@@ -19,12 +19,12 @@
 #include <latch>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 static constexpr int MAX_ITERATIONS = 10000;
 static constexpr unsigned int MISSION_DONE_LINE = 100;
 static constexpr std::chrono::milliseconds MISSION_DONE_PULSE{100};
+static constexpr const char* BALLISTIC_TABLE_PATH = "homework_07/data/ballistic_table.txt";
 
 static void dump_json(const std::vector<SimulationStep>& steps)
 {
@@ -33,6 +33,15 @@ static void dump_json(const std::vector<SimulationStep>& steps)
   j["steps"] = nlohmann::json::array();
 
   for (const SimulationStep& s : steps) {
+    nlohmann::ordered_json targets = nlohmann::json::array();
+    for (const Target& t : s.all_targets_) {
+      targets.push_back({
+        {"id", t.target_id_},
+        {"x", t.pos_.x_},
+        {"y", t.pos_.y_},
+      });
+    }
+
     j["steps"].push_back({
       {"targetIndex", s.target_id_},
       {"direction", s.direction_},
@@ -43,6 +52,10 @@ static void dump_json(const std::vector<SimulationStep>& steps)
       {"predictedTarget", {{"x", s.predicted_target_.x_}, {"y", s.predicted_target_.y_}}},
       {"targetPosition", {{"x", s.target_position_.x_}, {"y", s.target_position_.y_}}},
       {"timeSecSinceStart", s.elapsed_},
+      {"currentSpeed", s.current_speed_},
+      {"ammo", {{"mass", s.ammo_mass_}, {"drag", s.ammo_drag_}, {"lift", s.ammo_lift_}}},
+      {"fallParameters", {{"time", s.fall_time_}, {"distance", s.fall_distance_}}},
+      {"targets", targets},
     });
   }
 
@@ -66,7 +79,11 @@ int main(int argc, char* argv[])
     auto link = std::make_shared<UartLink>(serial);
     link->start(la);
 
-    auto abs = std::make_unique<AnalyticalBallisticSolver>();
+    auto table = load_ballistic_table(BALLISTIC_TABLE_PATH);
+    if (!table) {
+      std::cerr << "failed to parse ballistic table from " << BALLISTIC_TABLE_PATH << "\n";
+      return 1;
+    }
 
     GpioSignal gpio(gpiochip_name);
     gpio.request_output(start_line, 0);
@@ -84,33 +101,30 @@ int main(int argc, char* argv[])
     gpio.set_high(start_line);
     std::cout << "set line " << start_line << " high — checker should start sending\n";
 
-    std::cout << "waiting for ammo packet...\n";
+    std::cout << "waiting for ammo, config and telemetry packets...\n";
+    std::latch config_start{1};
     auto uart_config = std::make_shared<UartConfigLoader>(link);
+    uart_config->start(config_start);
+    uart_config->wait_ready();
+    uart_config->set_table(std::move(*table));
     std::cout << "ammo received: " << uart_config->get_config().ammo_ << "\n";
-    auto target_provider = std::make_shared<UartTargetProvider>(link, uart_config->get_config().target_timestep);
+    auto abs = std::make_unique<TableBallisticSolver>(uart_config);
+    auto target_provider = std::make_shared<UartTargetProvider>(link, uart_config);
 
     std::latch latch{2};
     target_provider->start(latch);
     std::cout << "listening on " << serial << "\n";
 
-    auto command_channel = std::make_shared<SynchronizedQueue<DroneCommand>>();
-    auto drone_physics =
-      std::make_shared<UartDronePhysics>(link, *uart_config, command_channel, uart_config->get_config().physics_timestep);
+    auto drone_physics = std::make_shared<UartDronePhysics>(link, uart_config);
 
     drone_physics->start(latch);
-
-    std::cout << "waiting for first telemetry frame...\n";
-    while (!drone_physics->is_ready()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
 
     auto mission = std::make_unique<MissionProccessor>(target_provider,
                                                        drone_physics,
                                                        uart_config,
                                                        std::move(abs),
                                                        std::make_unique<FirepointProvider>(),
-                                                       std::make_unique<BallisticSolutionEvaluator>(),
-                                                       command_channel);
+                                                       std::make_unique<BallisticSolutionEvaluator>());
 
     std::latch mission_latch{1};
     mission->start(mission_latch, MAX_ITERATIONS);

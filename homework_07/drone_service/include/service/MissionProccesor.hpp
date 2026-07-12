@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ThreadSafeQueue.hpp"
 #include "dto/AmmoDTO.hpp"
 #include "models/Ammo.hpp"
 #include "models/Coord.hpp"
@@ -19,6 +18,7 @@
 #include "service/interfaces/ITargetProvider.hpp"
 #include "service/interfaces/IDronePhysics.hpp"
 #include <atomic>
+#include <chrono>
 #include <latch>
 #include <memory>
 #include <mutex>
@@ -30,7 +30,8 @@
 
 constexpr float SWITCH_FACTOR = 0.5F;
 constexpr float LOCK_FACTOR = 2.0F;
-constexpr float COMMAND_LATENCY = 0.15F;  // measured GPIO/UART round-trip from fire decision to actual release
+constexpr float COMMAND_LATENCY = 0.12F;  // measured GPIO/UART round-trip from fire decision to actual release
+constexpr std::chrono::seconds MISSION_TIMEOUT{90};
 
 class MissionProccessor : public IMissionProccessor {
   // internal dependencies
@@ -42,7 +43,6 @@ class MissionProccessor : public IMissionProccessor {
   std::shared_ptr<const ITargetProvider> target_provider_;
   std::shared_ptr<const IDronePhysics> drone_physics_;
   std::shared_ptr<const IConfigLoader> config_loader_;
-  std::shared_ptr<SynchronizedQueue<DroneCommand>> channel_;
 
   const Ammo ammo_;
 
@@ -59,8 +59,13 @@ class MissionProccessor : public IMissionProccessor {
   std::atomic<bool> running_{false};
 
   const Task& select_task(const DroneTelemetry& telemetry, const std::vector<Task>& tasks) const;
-  void log_simulation(
-    const DroneTelemetry& tel, const Task& tsk, const IState* s, const FallResult& ap, const Target& tar, const Coord& active);
+  void log_simulation(const DroneTelemetry& tel,
+                      const Task& tsk,
+                      const IState* s,
+                      const FallResult& ap,
+                      const Target& tar,
+                      const Coord& active,
+                      const std::vector<Target>& all_targets);
 
   bool has_point_visited(const Coord& point, const Coord& previous, const Coord& current, float tolerance) const;
 
@@ -80,15 +85,13 @@ public:
                     std::shared_ptr<const IConfigLoader> cl,
                     std::unique_ptr<IBallisticSolver> bs,
                     std::unique_ptr<IFirepointProvider> fp,
-                    std::unique_ptr<IBallisticSolutionEvaluator> te,
-                    std::shared_ptr<SynchronizedQueue<DroneCommand>> channel)
+                    std::unique_ptr<IBallisticSolutionEvaluator> te)
     : firepoint_provider_(std::move(fp))
     , time_evaluator_(std::move(te))
     , ballistic_solver_(std::move(bs))
     , target_provider_(std::move(tp))
     , drone_physics_(std::move(dp))
     , config_loader_(std::move(cl))
-    , channel_(std::move(channel))
     , ammo_([&]() {
       const auto& arsenal = this->config_loader_->get_arsenal();
       const auto& name = this->config_loader_->get_config().ammo_;

@@ -38,16 +38,11 @@ void UartLink::run_loop()
 
     for (int i = 0; i < r; i++) {
       if (parser.feed(buff[i], type, payload, len)) {
-        if (!seen_packet_types_[type]) {
-          seen_packet_types_[type] = true;
-          std::cerr << "UartLink: first frame of packet type 0x" << std::hex << static_cast<int>(type) << std::dec << "\n";
-        }
         switch (type) {
           case dlink::PacketType::PKT_TELEMETRY: {
             dlink::Telemetry t{};
             memcpy(&t, payload, sizeof(t));
-            std::cerr << "UartLink TELEMETRY t_ms=" << t.t_ms << " x=" << t.x << " y=" << t.y << " z=" << t.z << " vx=" << t.vx
-                      << " vy=" << t.vy << " speed=" << t.speed << " dir=" << t.dir << " state=" << static_cast<int>(t.state) << "\n";
+            std::cout << "[UartLink] Telemetry pos: x=" << t.x << " y=" << t.y << " dir=" << t.dir << std::endl;
             telemetry_channel_.emplace(t);
             break;
           }
@@ -60,7 +55,7 @@ void UartLink::run_loop()
           case dlink::PacketType::PKT_TARGET: {
             dlink::TargetPos target{};
             memcpy(&target, payload, sizeof(target));
-            target_channel_.emplace(target);
+            target_channel_.emplace(TimestampedTargetPos{target, std::chrono::steady_clock::now()});
             break;
           }
           case dlink::PacketType::PKT_RESULT: {

@@ -7,7 +7,7 @@
 
 class IDronePhysics {
 public:
-  virtual void step(const DroneCommand& command, float dt) = 0;
+  virtual void submit_command(const DroneCommand& command) const = 0;
 
   virtual const DroneTelemetry get_telemetry() const = 0;
   virtual const DroneSpec get_spec() const = 0;

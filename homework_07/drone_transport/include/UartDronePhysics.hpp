@@ -9,14 +9,16 @@
 
 #include <memory>
 #include <mutex>
-#include <optional>
 
 class UartDronePhysics : public IDronePhysics, public ScheduledWorker {
-  std::shared_ptr<UartLink> link_;
-  SynchronizedQueue<dlink::Telemetry>& telemetry_channel_;
-  std::shared_ptr<SynchronizedQueue<DroneCommand>> command_channel_;
+private:
+  std::shared_ptr<UartLink> uart_link_;
+  std::shared_ptr<IConfigLoader> config_loader_;
 
-  std::optional<DroneTelemetry> telemetry_;
+  SynchronizedQueue<dlink::Telemetry>& telemetry_channel_;
+  mutable SynchronizedQueue<DroneCommand> command_channel_;
+
+  DroneTelemetry telemetry_;
   const DroneSpec spec_;
   DroneCommand command_{};
 
@@ -24,19 +26,16 @@ class UartDronePhysics : public IDronePhysics, public ScheduledWorker {
   mutable std::mutex command_mtx_;
 
   static const IState* state_from_mode(DroneMode mode);
+
   void apply(const dlink::Telemetry& t);
-  dlink::Control to_control(const DroneCommand& cmd) const;
   void tick() override;
 
+  dlink::Control to_control(const DroneCommand& cmd) const;
+
 public:
-  UartDronePhysics(std::shared_ptr<UartLink> link,
-                   const IConfigLoader& config_loader,
-                   std::shared_ptr<SynchronizedQueue<DroneCommand>> command_channel,
-                   float poll_period);
+  UartDronePhysics(std::shared_ptr<UartLink> uart_link, std::shared_ptr<IConfigLoader> config_loader);
 
-  bool is_ready() const;
-
-  void step(const DroneCommand& command, float dt) override;
+  void submit_command(const DroneCommand& command) const override;
   const DroneTelemetry get_telemetry() const override;
   const DroneSpec get_spec() const override;
   const DroneCommand get_active_command() const override;

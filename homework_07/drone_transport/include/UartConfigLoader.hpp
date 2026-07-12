@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DroneLink.hpp"
+#include "ScheduledWorker.hpp"
 #include "UartLink.hpp"
 #include "dto/AmmoDTO.hpp"
 #include "dto/ConfigDTO.hpp"
@@ -8,51 +9,35 @@
 #include "dto/BallisticTableDTO.hpp"
 #include "service/interfaces/IConfigLoader.hpp"
 
-#include <iostream>
+#include <latch>
 #include <memory>
 #include <optional>
-#include <stdexcept>
-#include <thread>
-#include <chrono>
 
-class UartConfigLoader : public IConfigLoader {
+class UartConfigLoader : public IConfigLoader, public ScheduledWorker {
+  std::shared_ptr<UartLink> link_;
+
   ConfigDTO config_;
   AmmoDTO arsenal_;
+  std::optional<BallisticTableDTO> table_;
+
+  std::latch ready_{3};
+  bool ammo_done_{false};
+  bool cfg_done_{false};
+  bool telemetry_done_{false};
+
+  void tick() override;
 
 public:
-  UartConfigLoader(std::shared_ptr<UartLink> link)
-  {
-    auto& ammo_q = link->ammo_channel();
-    auto& cfg_q = link->config_channel();
+  explicit UartConfigLoader(std::shared_ptr<UartLink> link);
 
-    while (true) {
-      const auto packets = ammo_q.drain_all();
-      if (!packets.empty()) {
-        const auto& ammo = packets.front();
-        config_.ammo_ = std::string(ammo.name);
-        config_.hit_radius_ = ammo.hitRadius;
-        arsenal_.ammos_.push_back({std::string(ammo.name), ammo.mass, ammo.drag, ammo.lift});
-        std::cout << "Ammo fetched" << std::endl;
-      }
+  void wait_ready() const override;
 
-      std::optional<dlink::DroneCfg> cfg = cfg_q.drain_to_last();
-      if (cfg.has_value()) {
-        config_.attack_speed_ = cfg->attackSpeed;
-        config_.acceleration_path_ = cfg->accelerationPath;
-        config_.angular_speed_ = cfg->angularSpeed;
-        config_.turn_threshold_ = cfg->turnThreshold;
-        config_.time_step_ = cfg->timeStep;
-        config_.timescale = cfg->timeScale;
-        std::cout << "Config fetched" << std::endl;
-        return;
-      }
+  const ConfigDTO& get_config() const override;
+  const AmmoDTO& get_arsenal() const override;
+  const TargetDTO& get_targets() const override;
+  const BallisticTableDTO& get_table() const override;
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-  }
-
-  const ConfigDTO& get_config() const override { return config_; }
-  const AmmoDTO& get_arsenal() const override { return arsenal_; }
-  const TargetDTO& get_targets() const override { throw std::logic_error("not available in UART mode"); }
-  const BallisticTableDTO& get_table() const override { throw std::logic_error("not available in UART mode"); }
+  // UART link never sends the full ballistic table — caller must load it from
+  // a local file and inject it here before get_table() is usable.
+  void set_table(BallisticTableDTO table);
 };

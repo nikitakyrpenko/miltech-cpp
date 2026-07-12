@@ -4,6 +4,7 @@ find_path(GPIOD_INCLUDE_DIR gpiod.h REQUIRED)
 add_library(drone_transport STATIC
     src/UartPort.cpp
     src/UartLink.cpp
+    src/UartConfigLoader.cpp
     src/UartTargetProvider.cpp
     src/UartDronePhysics.cpp
 )

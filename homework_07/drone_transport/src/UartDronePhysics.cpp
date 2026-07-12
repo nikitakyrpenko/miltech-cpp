@@ -1,21 +1,25 @@
 #include "UartDronePhysics.hpp"
+#include "ScheduledWorker.hpp"
 #include "UartLink.hpp"
+#include "service/interfaces/IConfigLoader.hpp"
 #include "service/state/StateStopped.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <memory>
+#include <utility>
 
-UartDronePhysics::UartDronePhysics(std::shared_ptr<UartLink> link,
-                                   const IConfigLoader& config_loader,
-                                   std::shared_ptr<SynchronizedQueue<DroneCommand>> command_channel,
-                                   float poll_period)
-  : ScheduledWorker(0.05F)
-  , link_(std::move(link))
-  , telemetry_channel_(link_->telemetry_channel())
-  , command_channel_(std::move(command_channel))
-  , spec_(config_loader.get_config().attack_speed_,
-          config_loader.get_config().acceleration_path_,
-          config_loader.get_config().angular_speed_,
-          config_loader.get_config().turn_threshold_)
+UartDronePhysics::UartDronePhysics(std::shared_ptr<UartLink> uart_link, std::shared_ptr<IConfigLoader> config_loader)
+  : ScheduledWorker(config_loader->get_config().physics_timestep)
+  , uart_link_(std::move(uart_link))
+  , config_loader_(std::move(config_loader))
+  , telemetry_channel_(uart_link_->telemetry_channel())
+  , telemetry_(
+      config_loader_->get_config().position_, config_loader_->get_config().initial_direction_, config_loader_->get_config().altitude_)
+  , spec_(config_loader_->get_config().attack_speed_,
+          config_loader_->get_config().acceleration_path_,
+          config_loader_->get_config().angular_speed_,
+          config_loader_->get_config().turn_threshold_)
 {
 }
 
@@ -38,24 +42,23 @@ const IState* UartDronePhysics::state_from_mode(DroneMode mode)
 void UartDronePhysics::apply(const dlink::Telemetry& t)
 {
   std::lock_guard<std::mutex> l(tel_mtx_);
-  if (!telemetry_.has_value()) {
-    telemetry_.emplace(Coord{t.x, t.y}, t.dir, t.z);
-  }
-  telemetry_->set_position(Coord{t.x, t.y});
-  telemetry_->set_current_speed(t.speed);
-  telemetry_->set_current_direction(t.dir);
-  telemetry_->set_elapsed(static_cast<float>(t.t_ms) / 1000.0F);
-  telemetry_->set_altitude(t.z);
+  telemetry_.set_position(Coord{t.x, t.y});
+  telemetry_.set_altitude(t.z);
+  telemetry_.set_current_speed(t.speed);
+  telemetry_.set_current_direction(t.dir);
+  telemetry_.set_elapsed(static_cast<float>(t.t_ms) / 1000.0F);
 }
 
 dlink::Control UartDronePhysics::to_control(const DroneCommand& cmd) const
 {
   std::lock_guard<std::mutex> l(tel_mtx_);
   const float delta =
-    std::atan2(std::sin(cmd.dir - telemetry_->get_current_direction()), std::cos(cmd.dir - telemetry_->get_current_direction()));
+    std::atan2(std::sin(cmd.dir - telemetry_.get_current_direction()), std::cos(cmd.dir - telemetry_.get_current_direction()));
 
   const float accel = (cmd.state == DroneMode::ACCELERATING || cmd.state == DroneMode::MOVING) ? 1.0F : -1.0F;
-  const float turn_rate = (std::abs(delta) < 1e-4F) ? 0.0F : std::copysign(1.0F, delta);
+
+  const float linear_range = spec_.get_angular_speed() * ScheduledWorker::idle_;
+  const float turn_rate = std::clamp(delta / linear_range, -1.0F, 1.0F);
 
   return {accel, turn_rate};
 }
@@ -65,34 +68,23 @@ void UartDronePhysics::tick()
   if (auto t = telemetry_channel_.drain_to_last()) {
     apply(*t);
   }
-  if (auto cmd = command_channel_->drain_to_last()) {
-    step(*cmd, 0.F);
+  if (auto cmd = command_channel_.drain_to_last()) {
+    std::lock_guard<std::mutex> l(command_mtx_);
+    command_ = *cmd;
   }
 
-  if (is_ready()) {
-    link_->send(to_control(get_active_command()));
-  }
+  uart_link_->send(to_control(get_active_command()));
 }
 
-bool UartDronePhysics::is_ready() const
+void UartDronePhysics::submit_command(const DroneCommand& command) const
 {
-  std::lock_guard<std::mutex> l(tel_mtx_);
-  return telemetry_.has_value();
-}
-
-void UartDronePhysics::step(const DroneCommand& command, float /*dt*/)
-{
-  std::lock_guard<std::mutex> l(command_mtx_);
-  command_ = command;
+  command_channel_.emplace(command);
 }
 
 const DroneTelemetry UartDronePhysics::get_telemetry() const
 {
   std::lock_guard<std::mutex> l(tel_mtx_);
-  if (!telemetry_) {
-    throw std::runtime_error("UartDronePhysics: telemetry not yet received");
-  }
-  return *telemetry_;
+  return telemetry_;
 }
 
 const DroneSpec UartDronePhysics::get_spec() const

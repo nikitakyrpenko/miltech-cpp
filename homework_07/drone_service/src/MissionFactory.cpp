@@ -9,9 +9,6 @@
 #include "service/TableBallisticSolver.hpp"
 #include "service/TargetProvider.hpp"
 
-#include "ThreadSafeQueue.hpp"
-#include "models/DroneCommand.hpp"
-
 #include <memory>
 #include <stdexcept>
 
@@ -49,18 +46,15 @@ SimulationBundle MissionFactory::create(LoaderType loader_type,
 {
   std::shared_ptr<IConfigLoader> loader = make_loader(loader_type, config_source, ammo_source, target_source, table_source);
 
-  auto channel = std::make_shared<SynchronizedQueue<DroneCommand>>();
-
   auto target = std::make_shared<TargetProvider>(loader);
-  auto physics = std::make_shared<DronePhysics>(*loader, channel);
+  auto physics = std::make_shared<DronePhysics>(*loader);
 
   auto mission = std::make_unique<MissionProccessor>(target,
                                                      physics,
                                                      loader,
                                                      make_fall_solver(solver_type, loader),
                                                      std::make_unique<FirepointProvider>(),
-                                                     std::make_unique<BallisticSolutionEvaluator>(),
-                                                     channel);
+                                                     std::make_unique<BallisticSolutionEvaluator>());
 
   return SimulationBundle{std::move(target), std::move(physics), std::move(mission)};
 }

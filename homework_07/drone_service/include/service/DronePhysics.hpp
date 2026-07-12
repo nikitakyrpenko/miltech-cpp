@@ -13,7 +13,7 @@
 #include <thread>
 
 class DronePhysics : public IDronePhysics {
-  const std::shared_ptr<SynchronizedQueue<DroneCommand>> channel_;
+  mutable SynchronizedQueue<DroneCommand> channel_;
 
   const float physics_time_step{0.1F};
   const float timescale_{1.0F};
@@ -28,10 +28,11 @@ class DronePhysics : public IDronePhysics {
   mutable std::mutex tel_mtx_;
   mutable std::mutex command_mtx_;
 
+  void step(float dt);
+
 public:
-  DronePhysics(const IConfigLoader& c, const std::shared_ptr<SynchronizedQueue<DroneCommand>> channel)
-    : channel_(std::move(channel))
-    , physics_time_step(c.get_config().physics_timestep)
+  explicit DronePhysics(const IConfigLoader& c)
+    : physics_time_step(c.get_config().physics_timestep)
     , timescale_(c.get_config().timescale)
     , telemetry_(c.get_config().position_, c.get_config().initial_direction_, c.get_config().altitude_)
     , spec_(c.get_config().attack_speed_, c.get_config().acceleration_path_, c.get_config().angular_speed_, c.get_config().turn_threshold_)
@@ -42,7 +43,7 @@ public:
   void start(std::latch& latch);
   void interrupt();
 
-  void step(const DroneCommand& command, float dt) override;
+  void submit_command(const DroneCommand& command) const override;
 
   const DroneTelemetry get_telemetry() const override;
   const DroneSpec get_spec() const override;

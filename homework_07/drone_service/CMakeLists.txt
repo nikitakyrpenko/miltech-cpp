@@ -8,7 +8,8 @@ add_library(
     src/DronePhysics.cpp
     src/MissionFactory.cpp
     src/AnalyticalBallisticSolver.cpp
-    src/TableBallisticSolver.cpp)
+    src/TableBallisticSolver.cpp
+    src/BallisticTableLoader.cpp)
 
 target_include_directories(
     drone_service

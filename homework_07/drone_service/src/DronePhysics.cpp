@@ -8,23 +8,28 @@
 static const IState* state_from_mode(DroneMode mode)
 {
   switch (mode) {
-    case DroneMode::ACCELERATING: return StateAccelerating::get_instance();
-    case DroneMode::DECELERATING: return StateDecelerating::get_instance();
-    case DroneMode::TURNING:      return StateTurning::get_instance();
-    case DroneMode::MOVING:       return StateMoving::get_instance();
-    default:                      return StateStopped::get_instance();
+    case DroneMode::ACCELERATING:
+      return StateAccelerating::get_instance();
+    case DroneMode::DECELERATING:
+      return StateDecelerating::get_instance();
+    case DroneMode::TURNING:
+      return StateTurning::get_instance();
+    case DroneMode::MOVING:
+      return StateMoving::get_instance();
+    default:
+      return StateStopped::get_instance();
   }
 }
 
-void DronePhysics::step(const DroneCommand& command, float dt)
+void DronePhysics::step(float dt)
 {
   // calculate direction
   float delta =
-    std::atan2(std::sin(command.dir - telemetry_.get_current_direction()), std::cos(command.dir - telemetry_.get_current_direction()));
+    std::atan2(std::sin(command_.dir - telemetry_.get_current_direction()), std::cos(command_.dir - telemetry_.get_current_direction()));
 
   float rot_step = spec_.get_angular_speed() * dt;
   if (std::abs(delta) <= rot_step) {
-    telemetry_.set_current_direction(command.dir);
+    telemetry_.set_current_direction(command_.dir);
   }
   else {
     telemetry_.set_current_direction(telemetry_.get_current_direction() + std::copysign(rot_step, delta));
@@ -32,7 +37,7 @@ void DronePhysics::step(const DroneCommand& command, float dt)
 
   // calculate speed
   float speed = telemetry_.get_current_speed();
-  switch (command.state) {
+  switch (command_.state) {
     case DroneMode::ACCELERATING:
       speed = std::min(speed + spec_.get_acceleration() * dt, spec_.get_attack_speed());
       break;
@@ -73,19 +78,24 @@ void DronePhysics::start(std::latch& latch)
 
     auto next = clock::now();
     while (running_) {
-      if (channel_->size() > 0) {
+      if (channel_.size() > 0) {
         std::lock_guard<std::mutex> command_guard(command_mtx_);
-        if (auto command = channel_->drain_to_last())
+        if (auto command = channel_.drain_to_last())
           command_ = *command;
       }
       {
         std::lock_guard<std::mutex> telemetry_guard(tel_mtx_);
-        step(command_, physics_time_step);
+        step(physics_time_step);
       }
       next += period;
       std::this_thread::sleep_until(next);
     }
   });
+}
+
+void DronePhysics::submit_command(const DroneCommand& command) const
+{
+  channel_.emplace(command);
 }
 
 const DroneSpec DronePhysics::get_spec() const
