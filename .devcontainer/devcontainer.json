@@ -15,6 +15,7 @@
   // VS Code відкриває контейнер від імені того самого користувача, що й host.
   // Це зменшує проблеми з ownership файлів у bind mount.
   "remoteUser": "${localEnv:USER}",
+  "remoteEnv": {"DEBUGINFOD_URLS": "https://debuginfod.elfutils.org"},
 
   // Проєкт монтується у домашню директорію користувача всередині контейнера.
   // Так шляхи виглядають однаково на Linux, macOS і Windows+WSL.
@@ -68,9 +69,11 @@
         "josetr.cmake-language-support-vscode",
         "cheshirekow.cmake-format",
         "ms-vscode.cpptools",
-        "llvm-vs-code-extensions.vscode-clangd"
+        "llvm-vs-code-extensions.vscode-clangd",
+        "PKief.material-icon-theme"
       ],
       "settings": {
+        "workbench.iconTheme": "material-icon-theme",
         // clangd читає build/debug/compile_commands.json з debug preset.
         // clang-tidy конфіг лишається в репозиторії, але автоматичний запуск
         // через clangd буде увімкнено пізніше, після заняття 2.6.
