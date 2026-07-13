@@ -1,5 +1,3 @@
-.cache/
-
 # Директорії збірки та локальний output мають відтворюватися з CMake.
 build/
 build-*/
@@ -14,6 +12,10 @@ cmake_install.cmake
 compile_commands.json
 install_manifest.txt
 _deps/
+
+# Python bytecode з'являється після перевірки launch-файлів і не потрібен у repo.
+__pycache__/
+*.py[cod]
 
 # Мінімальний набір compiled/debug артефактів для C++ прикладів.
 *.d
