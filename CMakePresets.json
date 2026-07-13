@@ -26,7 +26,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     },
-        {
+    {
       "name": "release",
       "displayName": "Release",
       "description": "Release build",
@@ -56,6 +56,12 @@
       "configurePreset": "debug"
     },
     {
+      "name": "aarch64-debug",
+      "displayName": "Build ARM64 Debug",
+      "description": "Зібрати ARM64 debug preset після cross-configure.",
+      "configurePreset": "aarch64-debug"
+    },
+    {
       "name": "relwithdebinfo",
       "displayName": "Build RelWithDebInfo",
       "description": "Зібрати relwithdebinfo preset після configure.",
@@ -66,12 +72,6 @@
       "displayName": "Build Release",
       "description": "Зібрати release preset після configure.",
       "configurePreset": "release"
-    },
-    {
-      "name": "aarch64-debug",
-      "displayName": "Build ARM64 Debug",
-      "description": "Зібрати ARM64 debug preset після cross-configure.",
-      "configurePreset": "aarch64-debug"
     }
   ]
 }
