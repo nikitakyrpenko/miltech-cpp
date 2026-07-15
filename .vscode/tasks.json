@@ -8,10 +8,7 @@
       "label": "CMake: configure and build",
       "type": "shell",
       "command": "cmake --preset debug && cmake --build --preset debug",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
+      "group": "build",
       "problemMatcher": [
         "$gcc"
       ],
@@ -27,6 +24,47 @@
       "type": "shell",
       "command": "rm -rf build",
       "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      // colcon build для ROS 2 workspace hw13. Source base ROS перед build,
+      // бо task shell non-interactive і .bashrc source не спрацьовує.
+      "label": "ROS2: colcon build (hw13)",
+      "type": "shell",
+      "command": "source /opt/ros/jazzy/setup.bash && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug",
+      "options": {
+        "cwd": "${workspaceFolder}/homework_13/robot_ws"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      // Default build task (Ctrl+Shift+B): build hw13 workspace, тоді
+      // source overlay і запуск повної системи через launch file.
+      "label": "ROS2: build + launch system (hw13)",
+      "type": "shell",
+      "command": "source /opt/ros/jazzy/setup.bash && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug && source install/setup.bash && ros2 launch antidrone_turret system.launch.py",
+      "options": {
+        "cwd": "${workspaceFolder}/homework_13/robot_ws"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
