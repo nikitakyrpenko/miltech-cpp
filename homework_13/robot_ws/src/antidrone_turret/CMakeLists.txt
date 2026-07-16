@@ -13,8 +13,14 @@ ament_auto_find_build_dependencies()
 
 # Власні msg/srv генерують C++ типи для типізованих топіків і сервісу.
 find_package(rosidl_default_generators REQUIRED)
-rosidl_generate_interfaces(${PROJECT_NAME} "msg/Target.msg" "msg/ActuatorStatus.msg"
-                           "msg/GimbalCommand.msg" "msg/ServoCommand.msg" "srv/TriggerActuator.srv")
+rosidl_generate_interfaces(
+    ${PROJECT_NAME}
+    "msg/Target.msg"
+    "msg/ActuatorStatus.msg"
+    "msg/GimbalCommand.msg"
+    "msg/ServoCommand.msg"
+    "msg/TurretStatus.msg"
+    "srv/TriggerActuator.srv")
 
 ament_auto_add_executable(target_track_publisher_node src/target_track_publisher_node.cpp)
 ament_auto_add_executable(actuator_node src/actuator_node.cpp)

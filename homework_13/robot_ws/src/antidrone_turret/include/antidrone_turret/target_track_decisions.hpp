@@ -4,10 +4,14 @@
 
 namespace antidrone_turret {
 
-enum class Decision { IDLE, TRACK, REQUEST_SHOT };
 enum class ServoCommand : int8_t { RIGHT = 1, LEFT = -1, CENTER = 0 };
 enum class GimbalCommand : int8_t { UP = 1, DOWN = -1, CENTER = 0 };
-enum class Axis { X, Y };
+
+enum class Confidence : int8_t { NONE = 0, LOW = 1, HIGH = 2 };
+enum class Lock : int8_t { IDLE = 0, TRACK = 1 };
+enum class Trigger : int8_t { SKIP = 0, REQUESTED = 1, RELOADING = 2 };
+
+enum class ActuatorState : int8_t { READY = 0, RELOADING = 1 };
 
 // config yaml sourced
 struct DecisionConfig {
@@ -23,6 +27,8 @@ struct ScreenResolutionConfig {
 
 struct TargetInput {
   bool visible;
+  float x;
+  float y;
   float distance_m;
   float confidence;
 };
@@ -39,21 +45,32 @@ struct GimbalParameters {
   float error_y;
 };
 
-inline Decision decide(const TargetInput& target, const DecisionConfig& config)
+struct State {
+  Confidence confidence;
+  Lock lock;
+  Trigger trigger;
+};
+
+struct ActuatorStatus {
+  ActuatorState state;
+  int count;
+};
+
+inline State decide(const TargetInput& target, const DecisionConfig& config, const ActuatorStatus& actuator_status)
 {
   if (!target.visible) {
-    return Decision::IDLE;
+    return {Confidence::NONE, Lock::IDLE, Trigger::SKIP};
   }
-
   if (target.confidence < config.confidence_threshold) {
-    return Decision::IDLE;
+    return {Confidence::LOW, Lock::IDLE, Trigger::SKIP};
   }
-
+  if (actuator_status.state == ActuatorState::RELOADING) {
+    return {Confidence::HIGH, Lock::TRACK, Trigger::RELOADING};
+  }
   if (target.distance_m <= config.max_distance_m) {
-    return Decision::REQUEST_SHOT;
+    return {Confidence::HIGH, Lock::TRACK, Trigger::REQUESTED};
   }
-
-  return Decision::TRACK;
+  return {Confidence::HIGH, Lock::TRACK, Trigger::SKIP};
 }
 
 inline ServoParameters calculate_servo_parameters(const ScreenResolutionConfig& resolution, float x_coord)
