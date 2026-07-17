@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "antidrone_turret/actuator_model.hpp"
+
 namespace antidrone_turret {
 
 enum class ServoCommand : int8_t { RIGHT = 1, LEFT = -1, CENTER = 0 };
@@ -11,7 +13,79 @@ enum class Confidence : int8_t { NONE = 0, LOW = 1, HIGH = 2 };
 enum class Lock : int8_t { IDLE = 0, TRACK = 1 };
 enum class Trigger : int8_t { SKIP = 0, REQUESTED = 1, RELOADING = 2 };
 
-enum class ActuatorState : int8_t { READY = 0, RELOADING = 1 };
+inline const char* to_string(ActuatorState state)
+{
+  switch (state) {
+    case ActuatorState::kReady:
+      return "READY";
+    case ActuatorState::kReloading:
+      return "RELOADING";
+  }
+  return "UNKNOWN";
+}
+
+inline const char* to_string(ServoCommand command)
+{
+  switch (command) {
+    case ServoCommand::LEFT:
+      return "LEFT";
+    case ServoCommand::CENTER:
+      return "CENTER";
+    case ServoCommand::RIGHT:
+      return "RIGHT";
+  }
+  return "UNKNOWN";
+}
+
+inline const char* to_string(GimbalCommand command)
+{
+  switch (command) {
+    case GimbalCommand::DOWN:
+      return "DOWN";
+    case GimbalCommand::CENTER:
+      return "CENTER";
+    case GimbalCommand::UP:
+      return "UP";
+  }
+  return "UNKNOWN";
+}
+
+inline const char* to_string(Confidence confidence)
+{
+  switch (confidence) {
+    case Confidence::NONE:
+      return "NONE";
+    case Confidence::LOW:
+      return "LOW";
+    case Confidence::HIGH:
+      return "HIGH";
+  }
+  return "UNKNOWN";
+}
+
+inline const char* to_string(Lock lock)
+{
+  switch (lock) {
+    case Lock::IDLE:
+      return "IDLE";
+    case Lock::TRACK:
+      return "TRACK";
+  }
+  return "UNKNOWN";
+}
+
+inline const char* to_string(Trigger trigger)
+{
+  switch (trigger) {
+    case Trigger::SKIP:
+      return "SKIP";
+    case Trigger::REQUESTED:
+      return "REQUESTED";
+    case Trigger::RELOADING:
+      return "RELOADING";
+  }
+  return "UNKNOWN";
+}
 
 // config yaml sourced
 struct DecisionConfig {
@@ -64,18 +138,18 @@ inline State decide(const TargetInput& target, const DecisionConfig& config, con
   if (target.confidence < config.confidence_threshold) {
     return {Confidence::LOW, Lock::IDLE, Trigger::SKIP};
   }
-  if (actuator_status.state == ActuatorState::RELOADING) {
+  if (target.distance_m > config.max_distance_m) {
+    return {Confidence::HIGH, Lock::TRACK, Trigger::SKIP};
+  }
+  if (actuator_status.state == ActuatorState::kReloading) {
     return {Confidence::HIGH, Lock::TRACK, Trigger::RELOADING};
   }
-  if (target.distance_m <= config.max_distance_m) {
-    return {Confidence::HIGH, Lock::TRACK, Trigger::REQUESTED};
-  }
-  return {Confidence::HIGH, Lock::TRACK, Trigger::SKIP};
+  return {Confidence::HIGH, Lock::TRACK, Trigger::REQUESTED};
 }
 
 inline ServoParameters calculate_servo_parameters(const ScreenResolutionConfig& resolution, float x_coord)
 {
-  float error_x = resolution.width / 2 - x_coord;
+  float error_x = x_coord - resolution.width / 2;
   ServoCommand command{};
 
   if (error_x > 0) {

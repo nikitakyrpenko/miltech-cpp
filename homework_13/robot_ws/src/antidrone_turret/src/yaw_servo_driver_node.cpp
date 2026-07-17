@@ -1,4 +1,5 @@
 #include "antidrone_turret/msg/servo_command.hpp"
+#include "antidrone_turret/target_track_decisions.hpp"
 
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -12,7 +13,7 @@ using ServoType = antidrone_turret::msg::ServoCommand;
 class ServoDriverNode final : public rclcpp::Node {
 public:
   ServoDriverNode()
-    : rclcpp::Node("servo_driver_node")
+    : rclcpp::Node("yaw_servo_driver_node")
   {
     subscription_ = this->create_subscription<ServoType>(kServoTopic, 10, [this](const ServoType& msg) { on_servo_message_received(msg); });
   }
@@ -20,8 +21,9 @@ public:
 private:
   auto on_servo_message_received(const ServoType& msg) -> void
   {
-    const char* dir = msg.direction > 0 ? "RIGHT" : msg.direction < 0 ? "LEFT" : "CENTER";
-    RCLCPP_INFO(get_logger(), "servo received dir=%s target_y=%.1f error_y=%.2f", dir, msg.target_x, msg.error_x);
+    const auto direction = static_cast<antidrone_turret::ServoCommand>(msg.direction);
+    RCLCPP_INFO(
+      get_logger(), "servo received dir=%s target_x=%.1f error_x=%.2f", antidrone_turret::to_string(direction), msg.target_x, msg.error_x);
   };
 
   rclcpp::Subscription<ServoType>::SharedPtr subscription_;

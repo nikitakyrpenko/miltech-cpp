@@ -94,7 +94,21 @@ private:
   {
     const auto target = map(msg_tgt);
 
+    RCLCPP_INFO(get_logger(),
+                "target received visible=%s x=%.1f y=%.1f distance_m=%.1f confidence=%.2f",
+                target.visible ? "true" : "false",
+                target.x,
+                target.y,
+                target.distance_m,
+                target.confidence);
+
     const auto state = antidrone_turret::decide(target, decision_config_, current_status_);
+
+    RCLCPP_INFO(get_logger(),
+                "decision confidence=%s lock=%s trigger=%s",
+                antidrone_turret::to_string(state.confidence),
+                antidrone_turret::to_string(state.lock),
+                antidrone_turret::to_string(state.trigger));
 
     if (state.lock == antidrone_turret::Lock::TRACK) {
       const auto servo = antidrone_turret::calculate_servo_parameters(screen_resolution_config_, msg_tgt.x);
@@ -119,7 +133,18 @@ private:
     turret_status_publisher_->publish(map(state, target));
   }
 
-  auto on_actuator_status_recieved(const ActuatorStatusType& msg_act) -> void { current_status_ = map(msg_act); }
+  auto on_actuator_status_recieved(const ActuatorStatusType& msg_act) -> void
+  {
+    const auto previous_state = current_status_.state;
+    current_status_ = map(msg_act);
+
+    if (current_status_.state != previous_state) {
+      RCLCPP_INFO(get_logger(),
+                  "actuator status state=%s trigger_count=%d",
+                  antidrone_turret::to_string(current_status_.state),
+                  current_status_.count);
+    }
+  }
 
   auto on_turret_actuator_responded(const rclcpp::Client<TriggerActuatorType>::SharedFuture& future) -> void
   {

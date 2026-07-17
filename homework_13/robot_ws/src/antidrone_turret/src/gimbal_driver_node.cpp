@@ -1,4 +1,5 @@
 #include "antidrone_turret/msg/gimbal_command.hpp"
+#include "antidrone_turret/target_track_decisions.hpp"
 
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -21,8 +22,9 @@ public:
 private:
   auto on_gimbal_message_received(const GimbalType& msg) -> void
   {
-    const char* dir = msg.direction > 0 ? "UP" : msg.direction < 0 ? "DOWN" : "CENTER";
-    RCLCPP_INFO(get_logger(), "gimbal received dir=%s target_y=%.1f error_y=%.2f", dir, msg.target_y, msg.error_y);
+    const auto direction = static_cast<antidrone_turret::GimbalCommand>(msg.direction);
+    RCLCPP_INFO(
+      get_logger(), "gimbal received dir=%s target_y=%.1f error_y=%.2f", antidrone_turret::to_string(direction), msg.target_y, msg.error_y);
   };
 
   rclcpp::Subscription<GimbalType>::SharedPtr subscription_;
