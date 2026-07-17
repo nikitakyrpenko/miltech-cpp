@@ -46,6 +46,9 @@ if(BUILD_TESTING)
     target_include_directories(provided_logic_test PRIVATE include)
     target_compile_definitions(provided_logic_test
                                PRIVATE ANTIDRONE_TURRET_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+    ament_add_gtest(target_track_decisions_test test/target_track_decisions_test.cpp)
+    target_include_directories(target_track_decisions_test PRIVATE include)
 endif()
 
 ament_export_dependencies(rosidl_default_runtime)
