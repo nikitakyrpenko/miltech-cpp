@@ -1,0 +1,11 @@
+{
+  // Override the devcontainer's clangd.arguments (which pin
+  // --compile-commands-dir=build/debug for the plain-CMake homeworks).
+  // homework_14 is a colcon/ament ROS 2 workspace whose compile_commands.json
+  // — the one carrying the rclcpp and underground_world include flags — lives
+  // under robot_ws/build. Point clangd there so ROS 2 generated headers resolve.
+  "clangd.arguments": [
+    "--compile-commands-dir=homework_14/robot_ws/build",
+    "--background-index"
+  ]
+}

@@ -30,7 +30,20 @@ def generate_launch_description():
         ],
     )
 
-    # Тут можна додати керуючі ноди або інший launch-файл з рішенням.
+    pathfinder_node = Node(
+        package="underground_world",
+        executable="pathfinder_move_node",
+        name="pathfinder_move_node",
+        output="screen",
+    )
+
+    payload_trigger_node = Node(
+        package="underground_world",
+        executable="payload_trigger_node",
+        name="payload_trigger_node",
+        output="screen",
+    )
+
     return LaunchDescription(
         [
             DeclareLaunchArgument(
@@ -44,5 +57,7 @@ def generate_launch_description():
                 description="Delay before applying queued move commands",
             ),
             world_node,
+            pathfinder_node,
+            payload_trigger_node,
         ]
     )
