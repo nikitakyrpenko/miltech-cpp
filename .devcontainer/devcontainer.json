@@ -49,6 +49,11 @@
     "--ulimit=core=-1",
     "--hostname=devcontainer",
     "--add-host=devcontainer:127.0.1.1"
+    //"--device=/dev/ttyHS1:/dev/ttyHS1",
+    //"--device=/dev/ttyHS2:/dev/ttyHS2",
+    //"--device=/dev/gpiochip4:/dev/gpiochip4",
+    //"--group-add=dialout",
+    //"--group-add=102"
   ],
 
   // Усе всередині customizations.vscode застосовується саме до VS Code
