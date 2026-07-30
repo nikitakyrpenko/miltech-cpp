@@ -2,13 +2,14 @@
 # MAVSDK у цьому ДЗ зафiксовано на конкретнiй версiї, щоб не шукати пакет вручну.
 ARG MAVSDK_VERSION=2.12.9
 
-FROM ubuntu:latest AS builder
+FROM ubuntu:22.04 AS builder
 
 ARG MAVSDK_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Блок залежностей надано: iнструменти збирання, CMake та wget для MAVSDK.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=5 update && \
+    apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=5 install -y --no-install-recommends \
     g++ cmake git make wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,12 +28,13 @@ RUN cmake -B build -S . -DCMAKE_BUILD_TYPE=Release  && \
 
 # Етап 2: запуск
 # Для простоти ДЗ той самий MAVSDK .deb встановлюється i в образ запуску.
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 ARG MAVSDK_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=5 update && \
+    apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=5 install -y --no-install-recommends \
     wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
