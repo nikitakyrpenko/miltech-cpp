@@ -27,6 +27,21 @@ RUN apt update && \
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
   locale-gen
 
+# MAVSDK для локальної розробки c2_service просто у devcontainer: тi самi
+# заголовки й бiблiотека, що й у c2 builder-стадiї, зафiксованi на однаковiй
+# версiї. MAVSDK немає в apt-репозиторiях, тому ставимо офiцiйний .deb з
+# GitHub. Пакет зiбрано пiд ubuntu22.04, але коректно встановлюється i на
+# 24.04-базi (так само як c2 runner на ubuntu:latest). `apt install ./deb`
+# автоматично пiдтягує рантайм-залежностi.
+ARG MAVSDK_VERSION=2.12.9
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends wget ca-certificates && \
+  wget -qO /tmp/mavsdk-dev.deb \
+    "https://github.com/mavlink/MAVSDK/releases/download/v${MAVSDK_VERSION}/libmavsdk-dev_${MAVSDK_VERSION}_ubuntu22.04_amd64.deb" && \
+  apt-get install -y /tmp/mavsdk-dev.deb && \
+  rm /tmp/mavsdk-dev.deb && \
+  rm -rf /var/lib/apt/lists/* && apt-get clean -y
+
 # Конфіги C++ тулів кладемо в корінь /, не в home. clangd, clang-format,
 # cmake-format шукають такі файли в батьківських директоріях від точки
 # запуску - тобто вони знайдуться незалежно від того, де всередині
