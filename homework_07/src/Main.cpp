@@ -1,4 +1,6 @@
 #include "GpioSignal.hpp"
+#include "JsonHttp.hpp"
+#include "TcpLink.hpp"
 #include "models/SimulationStep.hpp"
 #include "service/MissionFactory.hpp"
 
@@ -6,21 +8,31 @@
 
 #include <chrono>
 #include <exception>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <latch>
+#include <optional>
 #include <string>
 #include <vector>
 
 static constexpr int MAX_ITERATIONS = 10000;
 static constexpr std::chrono::milliseconds MISSION_DONE_PULSE{100};
 static constexpr const char* BALLISTIC_TABLE_PATH = "homework_07/data/ballistic_table.txt";
+static constexpr const char* SIMULATION_JSON_PATH = "simulation.json";
+static constexpr const char* REPORT_HOST = "cppmiltech.com.ua";
 
-static void dump_json(const std::vector<SimulationStep>& steps)
+static nlohmann::ordered_json build_report(const std::vector<SimulationStep>& steps,
+                                           const std::string& student_id,
+                                           const std::string& test_id)
 {
   nlohmann::ordered_json j;
-  j["totalSteps"] = steps.size();
-  j["steps"] = nlohmann::json::array();
+  j["studentId"] = student_id;
+  j["testId"] = test_id;
+
+  nlohmann::ordered_json& simulation = j["simulation"];
+  simulation["totalSteps"] = steps.size();
+  simulation["steps"] = nlohmann::json::array();
 
   for (const SimulationStep& s : steps) {
     nlohmann::ordered_json targets = nlohmann::json::array();
@@ -32,31 +44,60 @@ static void dump_json(const std::vector<SimulationStep>& steps)
       });
     }
 
-    j["steps"].push_back({
-      {"targetIndex", s.target_id_},
-      {"direction", s.direction_},
-      {"state", s.state_},
-      {"position", {{"x", s.position_.x_}, {"y", s.position_.y_}}},
-      {"dropPoint", {{"x", s.drop_point_.x_}, {"y", s.drop_point_.y_}}},
-      {"aimPoint", {{"x", s.aim_point_.x_}, {"y", s.aim_point_.y_}}},
-      {"predictedTarget", {{"x", s.predicted_target_.x_}, {"y", s.predicted_target_.y_}}},
-      {"targetPosition", {{"x", s.target_position_.x_}, {"y", s.target_position_.y_}}},
-      {"timeSecSinceStart", s.elapsed_},
-      {"currentSpeed", s.current_speed_},
-      {"ammo", {{"mass", s.ammo_mass_}, {"drag", s.ammo_drag_}, {"lift", s.ammo_lift_}}},
-      {"fallParameters", {{"time", s.fall_time_}, {"distance", s.fall_distance_}}},
-      {"targets", targets},
-    });
+    simulation["steps"].push_back({{"targetIndex", s.target_id_},
+                                   {"direction", s.direction_},
+                                   {"state", s.state_},
+                                   {"position", {{"x", s.position_.x_}, {"y", s.position_.y_}}},
+                                   {"dropPoint", {{"x", s.drop_point_.x_}, {"y", s.drop_point_.y_}}},
+                                   {"aimPoint", {{"x", s.aim_point_.x_}, {"y", s.aim_point_.y_}}},
+                                   {"predictedTarget", {{"x", s.predicted_target_.x_}, {"y", s.predicted_target_.y_}}},
+                                   {"targetPosition", {{"x", s.target_position_.x_}, {"y", s.target_position_.y_}}},
+                                   {"timeSecSinceStart", s.elapsed_}});
   }
 
-  std::ofstream ofs("simulation.json");
+  return j;
+}
+
+static void write_json_file(const std::string& path, const nlohmann::ordered_json& j)
+{
+  std::ofstream ofs(path);
   ofs << j.dump(2);
+}
+
+static bool post_report(const TcpLink& link,
+                        const nlohmann::ordered_json& report,
+                        const std::string& student_id,
+                        const std::string& test_id,
+                        const std::string& api_key)
+{
+  const HttpHeaders headers = {
+    {"User-Agent",
+     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+     "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"},
+    {"Cookie", "wssplashchk=5c7ecedb1fc6640e98082a16e749284809eb2246.1785740698.1"},
+    {"x-api-key", api_key},
+  };
+
+  const std::string path = std::format("/api/dz12/results/{}/{}", test_id, student_id);
+  const std::optional<HttpResponse> response = post_json(link, REPORT_HOST, path, report, headers);
+
+  if (!response) {
+    std::cerr << "reporting failed: no answer from " << REPORT_HOST << path << "\n";
+    return false;
+  }
+
+  std::cout << "reported to " << REPORT_HOST << path << " -> " << response->status_code << " " << response->status_text << "\n";
+
+  return response->status_code.starts_with("2");
 }
 
 int main(int argc, char* argv[])
 {
-  if (argc < 5) {
-    std::cerr << "Usage: " << argv[0] << " <gpiochip> <serial_device> <start_line> <end_line>\n";
+  const std::string studentId = "2063";
+  const std::string taskId = "T01";
+
+  if (argc < 6) {
+    std::cerr << "Usage: " << argv[0] << " <gpiochip> <serial_device> <start_line> <end_line> <api_key>\n";
     return 1;
   }
 
@@ -64,6 +105,7 @@ int main(int argc, char* argv[])
   const char* serial = argv[2];
   const unsigned int start_line = static_cast<unsigned int>(std::stoul(argv[3]));
   const unsigned int end_line = static_cast<unsigned int>(std::stoul(argv[4]));
+  const std::string api_key = argv[5];
 
   try {
     GpioSignal gpio(gpiochip_name);
@@ -96,9 +138,15 @@ int main(int argc, char* argv[])
     std::cout << "mission complete — pulsed line " << end_line << "\n";
 
     const std::vector<SimulationStep>& steps = sim.mission->get_steps();
-    dump_json(steps);
+    const nlohmann::ordered_json report = build_report(steps, studentId, taskId);
 
-    std::cout << "Wrote " << steps.size() << " steps to simulation.json" << std::endl;
+    write_json_file(SIMULATION_JSON_PATH, report);
+    std::cout << "Wrote " << steps.size() << " steps to " << SIMULATION_JSON_PATH << std::endl;
+
+    const TcpLink link;
+    if (!post_report(link, report, studentId, taskId, api_key)) {
+      return 1;
+    }
   }
   catch (const std::exception& e) {
     std::cerr << "test harness failed: " << e.what() << std::endl;

@@ -3,7 +3,6 @@
 #include "service/interfaces/IConfigLoader.hpp"
 
 #include <memory>
-#include <stdexcept>
 
 class ConfigLoader : public IConfigLoader {
   std::unique_ptr<ConfigDTO> config_;
