@@ -1,4 +1,3 @@
-#include "TcpLink.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -12,6 +11,7 @@
 #include <thread>
 #include <utility>
 
+#include "TcpLink.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponce.hpp"
 #include "TcpPort.hpp"
@@ -177,6 +177,7 @@ std::optional<HttpResponse> TcpLink::dispatch(const HttpRequest& request) const
       if (!raw) {
         std::cerr << "Attempt " << attempt + 1 << ": response lost after full send\n";
         if (request.method() == HttpRequest::Method::Post) {
+          std::cout << "No retry for POST after full send\n";
           return std::nullopt;
         }
         continue;

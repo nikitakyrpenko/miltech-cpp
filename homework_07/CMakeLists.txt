@@ -27,7 +27,7 @@ add_subdirectory(drone_service_json)
 add_subdirectory(drone_service_uart)
 add_subdirectory(drone_mission_factory)
 
-add_executable(drone_target_cli src/Main.cpp)
+add_executable(drone_target_cli src/Main.cpp src/ResultReporter.cpp src/FileResultReporter.cpp src/HttpResultReporter.cpp)
 target_link_libraries(drone_target_cli PRIVATE drone_model drone_state drone_core drone_service_uart drone_transport drone_mission_factory)
 target_include_directories(drone_target_cli PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external)
 target_compile_options(drone_target_cli PRIVATE -Wall -Wextra -pedantic)
