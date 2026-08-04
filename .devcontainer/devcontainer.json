@@ -74,6 +74,7 @@
       ],
       "settings": {
         "workbench.iconTheme": "material-icon-theme",
+        "editor.formatOnSave": true,
         // clangd читає build/debug/compile_commands.json з debug preset.
         // clang-tidy конфіг лишається в репозиторії, але автоматичний запуск
         // через clangd буде увімкнено пізніше, після заняття 2.6.

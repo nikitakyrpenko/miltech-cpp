@@ -18,3 +18,5 @@ turret_controller_node:
   ros__parameters:
     confidence_threshold: 0.8
     max_distance_m: 30.0
+    screen_width: 640.0
+    screen_height: 480.0

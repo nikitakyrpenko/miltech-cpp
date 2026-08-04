@@ -6,6 +6,11 @@
   // under robot_ws/build. Point clangd there so ROS 2 generated headers resolve.
   "clangd.arguments": [
     "--compile-commands-dir=homework_14/robot_ws/build",
+  // homework_13 is a colcon/ament ROS 2 workspace whose compile_commands.json
+  // — the one carrying the rclcpp and antidrone_turret include flags — lives
+  // under robot_ws/build. Point clangd there so ROS 2 generated headers resolve.
+  "clangd.arguments": [
+    "--compile-commands-dir=homework_13/robot_ws/build",
     "--background-index"
   ]
 }
