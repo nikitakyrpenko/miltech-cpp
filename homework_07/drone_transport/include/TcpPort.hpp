@@ -15,7 +15,7 @@ class TcpPort {
   void clean();
 
 public:
-  TcpPort(const char* domain_name, uint16_t port = 80);
+  TcpPort(const char* domain_name, uint16_t port = 80, int connect_timeout_ms = 0);
   ~TcpPort();
 
   TcpPort(const TcpPort&) = delete;

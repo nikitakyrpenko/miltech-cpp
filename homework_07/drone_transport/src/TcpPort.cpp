@@ -17,7 +17,7 @@
 
 static constexpr int SYN_ACK_RETRIES = 3;
 
-TcpPort::TcpPort(const char* domain_name, uint16_t port)
+TcpPort::TcpPort(const char* domain_name, uint16_t port, int connect_timeout_ms)
 {
   // DNS lookup to IPV4 or IPV6
   addrinfo hint{};
@@ -44,6 +44,12 @@ TcpPort::TcpPort(const char* domain_name, uint16_t port)
     throw std::runtime_error("Cannot instantiate socket connection");
 
   setsockopt(sock_fd_, IPPROTO_TCP, TCP_SYNCNT, &SYN_ACK_RETRIES, sizeof(SYN_ACK_RETRIES));
+
+  if (connect_timeout_ms > 0) {
+    timeval tv{.tv_sec = connect_timeout_ms / 1000, .tv_usec = (connect_timeout_ms % 1000) * 1000};
+    setsockopt(sock_fd_, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    setsockopt(sock_fd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+  }
 
   if (connect(sock_fd_, reinterpret_cast<sockaddr*>(&addr_), addr_len_) < 0) {
     std::cout << "Cannot  establish connection with " << get_ip_addr() << "\n";

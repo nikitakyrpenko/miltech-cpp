@@ -69,9 +69,13 @@ int main(int argc, char* argv[])
     // FileResultReporter http_reporter("simulation.json");
 
     if (!http_reporter.save(steps, CURRENT_STUDENT_ID, TASK_ID)) {
-      if (!http_reporter.check(CURRENT_STUDENT_ID, TASK_ID)) {
-        return 1;
-      }
+      std::cerr << "report failed to save\n";
+      return 1;
+    }
+
+    if (!http_reporter.check(CURRENT_STUDENT_ID, TASK_ID)) {
+      std::cerr << "report saved but GET-check did not confirm it on the server\n";
+      return 1;
     }
   }
   catch (const std::exception& e) {

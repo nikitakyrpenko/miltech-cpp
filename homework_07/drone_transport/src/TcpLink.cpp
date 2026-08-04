@@ -155,7 +155,7 @@ std::optional<HttpResponse> TcpLink::dispatch(const HttpRequest& request) const
     }
 
     try {
-      TcpPort port(request.host().c_str(), port_);
+      TcpPort port(request.host().c_str(), port_, policy_.connect_timeout_ms);
 
       const std::string header = request.serialize_header();
 
@@ -195,8 +195,8 @@ std::optional<HttpResponse> TcpLink::dispatch(const HttpRequest& request) const
       const int status = parse_status_code(parsed->status_code);
       response = std::move(parsed);
 
-      if (status >= 500) {
-        std::cerr << "Attempt " << attempt + 1 << ": server error " << status << "\n";
+      if (status == 503) {
+        std::cerr << "Attempt " << attempt + 1 << ": service unavailable (503)\n";
         continue;
       }
 
