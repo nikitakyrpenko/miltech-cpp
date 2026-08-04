@@ -24,7 +24,7 @@ STATE_COLORS = {
 def load_steps(path):
     with open(path) as f:
         data = json.load(f)
-    return data["steps"]
+    return data["simulation"]["steps"]
 
 
 def main():

@@ -12,5 +12,7 @@ public:
   bool check(const std::string& student_id, const std::string& test_id) const override;
 
 private:
+  nlohmann::ordered_json to_json(const std::vector<SimulationStep>& steps, const std::string& student_id, const std::string& test_id) const;
+
   std::string path_;
 };

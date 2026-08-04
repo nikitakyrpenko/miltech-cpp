@@ -16,7 +16,7 @@ HttpHeaders HttpResultReporter::auth_headers() const
     {"User-Agent",
      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
      "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"},
-    {"Cookie", "wssplashchk=474d35c4fab1e18407846d13660099c746e5707e.1785746939.1"},
+    {"Cookie", "wssplashchk=1d629af59874f3c164c74bab96ee083c6fd91e98.1785827379.1"},
     {"x-api-key", api_key_},
   };
 }
@@ -43,6 +43,10 @@ bool HttpResultReporter::check(const std::string& student_id, const std::string&
 
   if (!response) {
     std::cerr << "check failed: no answer from " << host_ << check_path << "\n";
+    return false;
+  }
+  if (response->status_code.starts_with("4") || response->status_code.starts_with("5")) {
+    std::cerr << "Status report failed with status code: " << response->status_code;
     return false;
   }
 
