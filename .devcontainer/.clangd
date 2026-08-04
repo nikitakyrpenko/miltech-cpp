@@ -13,5 +13,8 @@ InlayHints:
 # заняття 2.6, де static analysis буде окремою темою.
 Diagnostics:
   ClangTidy:
-    Remove:
+    Remove:1
       - '*'
+
+CompileFlags:
+  CompilationDatabase: build

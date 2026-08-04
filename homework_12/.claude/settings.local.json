@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/mickaborscha/miltech/miltech-cpp/**)",
+      "Read(//home/mickaborscha/miltech/miltech-cpp/.devcontainer/**)"
+    ]
+  }
+}

@@ -3,6 +3,10 @@ build/
 build-*/
 out/
 
+# ROS 2 / colcon генерує ці директорії при build і відтворюються локально.
+install/
+log/
+
 # CMake генерує ці файли при in-source або ручних локальних збірках.
 CMakeCache.txt
 CMakeFiles/

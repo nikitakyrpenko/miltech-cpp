@@ -51,6 +51,50 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      "name": "ROS2 hw13: actuator_node (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/actuator_node",
+      "preLaunchTask": "ROS2: colcon build (hw13)",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "environment": [
+        { "name": "AMENT_PREFIX_PATH", "value": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret:/opt/ros/jazzy" },
+        { "name": "LD_LIBRARY_PATH", "value": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib:/opt/ros/jazzy/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu" },
+        { "name": "RMW_IMPLEMENTATION", "value": "rmw_cyclonedds_cpp" },
+        { "name": "ROS_DOMAIN_ID", "value": "0" }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        { "description": "Enable pretty-printing for gdb", "text": "-enable-pretty-printing", "ignoreFailures": true }
+      ]
+    },
+    {
+      "name": "ROS2 hw13: target_track_publisher_node (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/target_track_publisher_node",
+      "preLaunchTask": "ROS2: colcon build (hw13)",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "environment": [
+        { "name": "AMENT_PREFIX_PATH", "value": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret:/opt/ros/jazzy" },
+        { "name": "LD_LIBRARY_PATH", "value": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib:/opt/ros/jazzy/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu" },
+        { "name": "RMW_IMPLEMENTATION", "value": "rmw_cyclonedds_cpp" },
+        { "name": "ROS_DOMAIN_ID", "value": "0" }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        { "description": "Enable pretty-printing for gdb", "text": "-enable-pretty-printing", "ignoreFailures": true }
+      ]
     }
   ]
 }
