@@ -31,6 +31,13 @@
       }
     },
     {
+      // colcon build для ROS 2 workspace hw14. Source base ROS перед build,
+      // бо task shell non-interactive і .bashrc source не спрацьовує.
+      "label": "ROS2: colcon build (hw14)",
+      "type": "shell",
+      "command": "source /opt/ros/jazzy/setup.bash && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug",
+      "options": {
+        "cwd": "${workspaceFolder}/homework_14/robot_ws"
       // colcon build для ROS 2 workspace hw13. Source base ROS перед build,
       // бо task shell non-interactive і .bashrc source не спрацьовує.
       "label": "ROS2: colcon build (hw13)",
@@ -50,6 +57,13 @@
       }
     },
     {
+      // Default build task (Ctrl+Shift+B): build hw14 workspace, тоді
+      // source overlay і запуск повної системи через launch file.
+      "label": "ROS2: build + launch system (hw14)",
+      "type": "shell",
+      "command": "source /opt/ros/jazzy/setup.bash && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug && source install/setup.bash && ros2 launch underground_world system.launch.py scenario:=dead_end_bunker.yaml",
+      "options": {
+        "cwd": "${workspaceFolder}/homework_14/robot_ws"
       // Default build task (Ctrl+Shift+B): build hw13 workspace, тоді
       // source overlay і запуск повної системи через launch file.
       "label": "ROS2: build + launch system (hw13)",

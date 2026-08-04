@@ -88,6 +88,7 @@
         // C++ language server-ів одночасно. Основний engine - clangd.
         "C_Cpp.intelliSenseEngine": "disabled",
         "[cpp]": {
+          "editor.formatOnSave": true,
           "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
           "editor.quickSuggestions": {
             "other": "on",

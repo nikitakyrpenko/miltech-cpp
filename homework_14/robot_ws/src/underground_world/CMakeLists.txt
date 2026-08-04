@@ -27,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 ament_auto_add_library(underground_world_core
   src/scenario_loader.cpp
   src/world_model.cpp
+  src/pathfinder_service.cpp
 )
 target_include_directories(underground_world_core PUBLIC include)
 
@@ -38,6 +39,12 @@ rosidl_get_typesupport_target(cpp_typesupport_target
   "rosidl_typesupport_cpp"
 )
 target_link_libraries(underground_world_node "${cpp_typesupport_target}")
+
+ament_auto_add_executable(pathfinder_move_node src/pathfinder_move_node.cpp)
+target_link_libraries(pathfinder_move_node underground_world_core "${cpp_typesupport_target}")
+
+ament_auto_add_executable(payload_trigger_node src/payload_trigger_node.cpp)
+target_link_libraries(payload_trigger_node "${cpp_typesupport_target}")
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)

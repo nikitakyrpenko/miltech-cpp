@@ -3,12 +3,19 @@
 #include <cstdint>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "underground_world/scenario.hpp"
 
 namespace underground_world {
+
+enum class Move { UP = 0, DOWN = 1, LEFT = 2, RIGHT = 3, NONE = 4 };
+
+enum class Status { EXPLORING = 0, ENGAGING = 1, RETURNING = 2, DONE = 3, FAILED = 4 };
 
 struct ObservedCell {
   Position position;
@@ -86,6 +93,26 @@ private:
   std::set<int> contacts_seen_;
   std::set<int> contacts_down_;
   std::set<Position> visible_passable_cells_;
+};
+
+class WorldMap {
+  std::unordered_map<Position, ObservedCell, Position::Hash> map_{};
+  std::optional<Position> starting_position_;
+
+public:
+  void chart(const LocalScanData& data);
+
+  const std::vector<const ObservedCell*> get_all_passable() const;
+  const Position get_started_position() const
+  {
+    if (!starting_position_) {
+      throw std::runtime_error("Not yet recieved");
+    }
+    return *starting_position_;
+  };
+
+  const std::unordered_map<Position, ObservedCell, Position::Hash>& get_map() const { return map_; }
+  bool does_position_neighbors_charted(const Position& pos) const;
 };
 
 }  // namespace underground_world

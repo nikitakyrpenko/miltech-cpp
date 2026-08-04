@@ -10,6 +10,19 @@ namespace underground_world {
 struct Position {
   int x = 0;
   int y = 0;
+
+  struct Hash {
+    std::size_t operator()(Position const& p) const noexcept
+    {
+      std::uint64_t h = (static_cast<std::uint64_t>(static_cast<std::uint32_t>(p.x)) << 32) ^ static_cast<std::uint32_t>(p.y);
+      h ^= h >> 30;
+      h *= 0xbf58476d1ce4e5b9ULL;
+      h ^= h >> 27;
+      h *= 0x94d049bb133111ebULL;
+      h ^= h >> 31;
+      return static_cast<std::size_t>(h);
+    }
+  };
 };
 
 inline bool operator==(const Position lhs, const Position rhs)

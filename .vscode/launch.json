@@ -53,6 +53,17 @@
       ]
     },
     {
+      "name": "ROS2 hw14: underground_world_node (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_14/robot_ws/install/underground_world/lib/underground_world/underground_world_node",
+      "preLaunchTask": "ROS2: colcon build (hw14)",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_14/robot_ws",
+      "environment": [
+        { "name": "AMENT_PREFIX_PATH", "value": "${workspaceFolder}/homework_14/robot_ws/install/underground_world:/opt/ros/jazzy" },
+        { "name": "LD_LIBRARY_PATH", "value": "${workspaceFolder}/homework_14/robot_ws/install/underground_world/lib:/opt/ros/jazzy/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu" },
       "name": "ROS2 hw13: actuator_node (gdb)",
       "type": "cppdbg",
       "request": "launch",

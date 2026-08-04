@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cmath>
 #include <utility>
+#include <vector>
+#include "underground_world/scenario.hpp"
 
 namespace underground_world {
 namespace {
@@ -245,9 +247,8 @@ std::optional<Contact> WorldModel::active_contact_at(const Position position) co
 
 std::optional<Contact> WorldModel::contact_at(const Position position) const
 {
-  const auto iter = std::find_if(scenario_.contacts.begin(), scenario_.contacts.end(), [position](const Contact& contact) {
-    return contact.position == position;
-  });
+  const auto iter = std::find_if(
+    scenario_.contacts.begin(), scenario_.contacts.end(), [position](const Contact& contact) { return contact.position == position; });
   if (iter == scenario_.contacts.end()) {
     return std::nullopt;
   }
@@ -262,6 +263,36 @@ bool WorldModel::contact_is_down(const int contact_id) const
 bool WorldModel::is_visible(const Position position) const
 {
   return std::abs(position.x - robot_.x) <= scenario_.scan_radius && std::abs(position.y - robot_.y) <= scenario_.scan_radius;
+}
+
+void WorldMap::chart(const LocalScanData& data)
+{
+  for (const auto& d : data.cells) {
+    map_.insert_or_assign(d.position, d);
+    if (!starting_position_) {
+      if (d.kind == CellKind::Start) {
+        starting_position_ = d.position;
+      }
+    }
+  }
+}
+
+const std::vector<const ObservedCell*> WorldMap::get_all_passable() const
+{
+  std::vector<const ObservedCell*> passable{};
+
+  for (const auto& [pos, cell] : map_) {
+    if (cell.kind != CellKind::Wall) {
+      passable.push_back(&cell);
+    }
+  }
+  return passable;
+}
+
+bool WorldMap::does_position_neighbors_charted(const Position& pos) const
+{
+  return map_.contains({pos.x + 1, pos.y}) && map_.contains({pos.x - 1, pos.y}) && map_.contains({pos.x, pos.y + 1}) &&
+         map_.contains({pos.x, pos.y - 1});
 }
 
 }  // namespace underground_world
