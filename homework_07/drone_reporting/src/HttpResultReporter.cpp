@@ -16,7 +16,7 @@ HttpHeaders HttpResultReporter::auth_headers() const
     {"User-Agent",
      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
      "(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"},
-    {"Cookie", "wssplashchk=1d629af59874f3c164c74bab96ee083c6fd91e98.1785827379.1"},
+    {"Cookie", "wssplashchk=be3231d61d41ce1c28f3c7eda37d1c262adca86d.1785923713.1"},
     {"x-api-key", api_key_},
   };
 }
