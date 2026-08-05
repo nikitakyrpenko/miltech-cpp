@@ -7,7 +7,6 @@
 #include "service/interfaces/IConfigLoader.hpp"
 
 #include <cmath>
-#include <memory>
 #include <mutex>
 
 class DronePhysics : public IDronePhysics, public ScheduledWorker {

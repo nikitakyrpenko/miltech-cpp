@@ -26,10 +26,8 @@ inline const StateDecision StateMoving::decide(const DroneSpec& spec,
   float delta = Calc::calculate_turning_angle(tel.get_position(), coord, tel.get_current_direction());
   float dir = Calc::angle(tel.get_position(), coord);
 
-  // reorient: heading drifted too far — hold current heading and slow down,
-  // then turn in place once stopped (don't steer toward the target at speed)
   if (std::abs(delta) > spec.get_turn_threshold()) {
-    return {StateDecelerating::get_instance(), tel.get_current_direction()};
+    return {StateDecelerating::get_instance(), dir};
   }
 
   if (decelerate_in_dest) {

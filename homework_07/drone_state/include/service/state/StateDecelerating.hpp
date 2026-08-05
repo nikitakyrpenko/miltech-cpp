@@ -28,10 +28,8 @@ inline const StateDecision StateDecelerating::decide(const DroneSpec& spec, cons
   if (tel.get_current_speed() <= 0.0F)
     return {StateStopped::get_instance(), dir};
 
-  // decelerating to reorient: hold current heading so physics slows in a straight line
-  // (don't steer toward the target until we've stopped and can turn in place)
   if (std::abs(delta) > spec.get_turn_threshold())
-    return {StateDecelerating::get_instance(), tel.get_current_direction()};
+    return {StateDecelerating::get_instance(), dir};
 
   float remaining_deceleration_distance = (tel.get_current_speed() * tel.get_current_speed()) / (2.0F * spec.get_acceleration());
   float distance = Calc::lenght(tel.get_position(), coord);
