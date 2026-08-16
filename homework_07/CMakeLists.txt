@@ -18,6 +18,8 @@ if(BUILD_TESTS AND NOT CMAKE_CROSSCOMPILING)
     FetchContent_MakeAvailable(googletest)
 endif()
 
+add_subdirectory(external)
+
 add_subdirectory(drone_model)
 add_subdirectory(drone_utils)
 add_subdirectory(drone_state)
@@ -29,5 +31,14 @@ add_subdirectory(drone_mission_factory)
 add_subdirectory(drone_reporting)
 
 add_executable(drone_target_cli src/Main.cpp)
-target_link_libraries(drone_target_cli PRIVATE drone_model drone_state drone_core drone_service_uart drone_transport drone_mission_factory drone_reporting)
+target_link_libraries(
+    drone_target_cli
+    PRIVATE drone_model
+            drone_state
+            drone_core
+            drone_service_uart
+            drone_transport
+            drone_mission_factory
+            drone_reporting
+            mavlink)
 target_compile_options(drone_target_cli PRIVATE -Wall -Wextra -pedantic)
