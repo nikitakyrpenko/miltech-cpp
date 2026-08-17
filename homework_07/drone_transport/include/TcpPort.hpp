@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <cstddef>
 #include <cstdint>
+#include "FdIo.hpp"
 
 class TcpPort {
   int sock_fd_ = -1;
@@ -21,8 +22,8 @@ public:
   TcpPort(const TcpPort&) = delete;
   TcpPort& operator=(const TcpPort&) = delete;
 
-  ssize_t write(const uint8_t* buff, size_t len, int timeout);
-  ssize_t read(uint8_t* buff, size_t limit, int timeout);
+  FdIo::Result write(const uint8_t* buff, size_t len, int timeout, size_t* written = nullptr);
+  FdIo::Result read_some(uint8_t* buff, size_t limit, int timeout, size_t* read_bytes = nullptr);
 
   const char* get_ip_addr() const;
 };

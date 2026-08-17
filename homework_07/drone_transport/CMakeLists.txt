@@ -7,6 +7,7 @@ add_library(drone_transport STATIC
     src/HttpRequest.cpp
     src/TcpPort.cpp
     src/TcpLink.cpp
+    src/UdpPort.cpp
 )
 
 target_include_directories(
