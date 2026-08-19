@@ -8,6 +8,11 @@
 .devcontainer/scripts/* text eol=lf
 Dockerfile text eol=lf
 
+# Сторонні vendored залежності: не рахуються як код проєкту в статистиці GitHub,
+# і не друкуються в diff при оновленні pinned-версії.
+homework_07/external/** linguist-vendored
+homework_07/external/c_library_v2/** -diff
+
 # Бінарні assets не проходять text normalization.
 *.png binary
 *.jpg binary
