@@ -24,6 +24,7 @@ add_subdirectory(drone_model)
 add_subdirectory(drone_utils)
 add_subdirectory(drone_state)
 add_subdirectory(drone_transport)
+add_subdirectory(drone_mavlink)
 add_subdirectory(drone_core)
 add_subdirectory(drone_service_json)
 add_subdirectory(drone_service_uart)
@@ -40,5 +41,6 @@ target_link_libraries(
             drone_transport
             drone_mission_factory
             drone_reporting
+            drone_mavlink
             mavlink)
 target_compile_options(drone_target_cli PRIVATE -Wall -Wextra -pedantic)
