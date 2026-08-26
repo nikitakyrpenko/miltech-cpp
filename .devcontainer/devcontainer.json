@@ -48,17 +48,25 @@
     "--security-opt=seccomp=unconfined",
     "--ulimit=core=-1",
     "--hostname=devcontainer",
-    "--add-host=devcontainer:127.0.1.1"
-    //"--device=/dev/ttyHS1:/dev/ttyHS1",
-    //"--device=/dev/ttyHS2:/dev/ttyHS2",
-    //"--device=/dev/gpiochip4:/dev/gpiochip4",
-    //"--group-add=dialout",
-    //"--group-add=102"
+    "--add-host=devcontainer:127.0.1.1",
+    // ST-Link VCP (USART bridge over the Nucleo's onboard debugger).
+    // GID 20 must match host's `dialout` group (getent group dialout).
+    "--device=/dev/ttyACM0:/dev/ttyACM0",
+    "--group-add=20",
+    // ST-Link raw SWD/debug endpoint (OpenOCD/st-util, via libusb). Whole
+    // bus dir. If USB device number shifts on replug (e.g. after
+    // unplugging), rebuild/restart the container to re-snapshot it.
+    "--device=/dev/bus/usb/001:/dev/bus/usb/001"
   ],
 
   // Усе всередині customizations.vscode застосовується саме до VS Code
   // сесії в контейнері. Це не те саме, що .vscode/extensions.json на host.
+  // customizations.jetbrains читається CLion Gateway окремо і не заважає
+  // VS Code (кожен IDE бачить лише свій namespace всередині customizations).
   "customizations": {
+    "jetbrains": {
+      "backend": "CLion"
+    },
     "vscode": {
       // Extensions встановлюються в devcontainer, щоб tooling був однаковий
       // у всіх студентів незалежно від host VS Code.
@@ -71,12 +79,15 @@
       ],
       "settings": {
         "workbench.iconTheme": "material-icon-theme",
-        // clangd читає build/debug/compile_commands.json з debug preset.
-        // clang-tidy конфіг лишається в репозиторії, але автоматичний запуск
-        // через clangd буде увімкнено пізніше, після заняття 2.6.
+        // compile-commands-dir прибрано: цей флаг глобально фіксує один
+        // шлях для ВСЬОГО workspace і перебиває per-directory .clangd
+        // (CompileFlags.CompilationDatabase), що ламає homework_18 - той
+        // окремий bare-metal CMake проєкт зі своїм build/Debug. Замість
+        // цього кожен проєкт має власний .clangd (root: build/debug,
+        // homework_18/.clangd: build/Debug), і clangd підбирає найближчий
+        // по дереву директорій для кожного файла.
         "clangd.path": "/usr/bin/clangd",
         "clangd.arguments": [
-          "--compile-commands-dir=build/debug",
           "--background-index"
         ],
         "clangd.restartAfterCrash": true,
