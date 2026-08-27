@@ -63,7 +63,7 @@ void Sx1280_Loop()
 
     // Debug only: read back what WriteBuffer actually stored, to confirm
     // it matches the intended PDU. Inspect via GDB.
-    uint8_t readback[Sx1280Device::BLE_PDU::SIZE] = {0};
+    uint8_t readback[Sx1280Device::PAYLOAD_SIZE] = {0};
     bool readback_ok = LORA_1280->read_buffer(0, readback, sizeof(readback));
     (void)readback_ok;
 

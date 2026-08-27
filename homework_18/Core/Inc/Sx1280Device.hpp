@@ -37,35 +37,20 @@ public:
     bool is_ok() const;
   };
 
-  struct BLE_PDU {
-    static constexpr uint8_t ADV_NONCONN_IND = 0x02;
-    static constexpr uint8_t TX_ADD = 1;
-    static constexpr uint8_t RX_ADD = 0;
-
-    static constexpr uint8_t HEADER_SIZE = 2;
-    static constexpr uint8_t ADV_A_SIZE = 6;
-    static constexpr uint8_t ADV_DATA_SIZE = 25;
-
-    static constexpr uint8_t SIZE = HEADER_SIZE + ADV_A_SIZE + ADV_DATA_SIZE;
-
-    static constexpr uint8_t HEADER_BYTE0 = ADV_NONCONN_IND | (TX_ADD << 6) | (RX_ADD << 7);
-    static constexpr uint8_t HEADER_BYTE1 = ADV_A_SIZE + ADV_DATA_SIZE;
-
-    static constexpr uint8_t header[2] = {HEADER_BYTE0, HEADER_BYTE1};
-    static constexpr uint8_t adv_a[6] = {0x01, 0x00, 0x00, 0x00, 0x00, 0xC0};
-  };
-
 #pragma pack(push, 1)
   struct AdvData {
     uint16_t angle_raw;
     uint32_t timestamp_ms;
     uint8_t status;
 
-    void to_bytes(uint8_t out[BLE_PDU::ADV_DATA_SIZE]) const;
+    void to_bytes(uint8_t* out) const;
   };
 #pragma pack(pop)
 
-  static_assert(sizeof(AdvData) <= BLE_PDU::ADV_DATA_SIZE, "AdvData must fit inside the fixed ADV_DATA_SIZE slot");
+  static constexpr uint8_t MAX_PAYLOAD_SIZE = 32;
+  static constexpr uint8_t PAYLOAD_SIZE = sizeof(AdvData);
+
+  static_assert(PAYLOAD_SIZE <= MAX_PAYLOAD_SIZE, "AdvData must fit inside MAX_PAYLOAD_SIZE");
 
   static constexpr uint16_t IRQ_TX_DONE = 0x0001;
 

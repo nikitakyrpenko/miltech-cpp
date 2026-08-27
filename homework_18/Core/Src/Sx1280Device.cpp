@@ -29,26 +29,39 @@ namespace Sx1280_Constants {
 // datasheet §13.1.1; STDBY_XOSC (0x01) switch happens later, before SetTx.
 constexpr uint8_t STANDBY_PARAMS[] = {0x00};
 
-// SetPacketType: PACKET_TYPE_BLE.
-constexpr uint8_t PACKET_TYPE_PARAMS[] = {0x04};
+// SetPacketType: PACKET_TYPE_LORA.
+constexpr uint8_t PACKET_TYPE_PARAMS[] = {0x01};
 
-// SetRfFrequency: channel 37 (2402 MHz) -> freq_reg = RF_Hz / (52e6/2^18) ->
-// 12,109,036 -> 0xB8C4EC, big-endian.
-constexpr uint8_t FREQUENCY_PARAMS[] = {0xB8, 0xC4, 0xEC};
+// SetRfFrequency: 2410 MHz, matched to the ESP32 rx.cpp/tx.cpp counterpart
+// -> freq_reg = RF_Hz * 1024 / 203125 = 12,149,366 -> 0xB96276, big-endian.
+constexpr uint8_t FREQUENCY_PARAMS[] = {0xB9, 0x62, 0x76};
 
 // SetBufferBaseAddress: txBaseAddress, rxBaseAddress.
 constexpr uint8_t BUFFER_BASE_ADDRESS_PARAMS[] = {0x00, 0x00};
 
-// SetModulationParams, BLE 1M PHY: 1Mbps/2.4MHz bitrate-bandwidth
-// (BLE_BR_1_000_BW_2_4, sx1280.txt:4898 -- trying this over BW_1_2/0x45 to
-// see if it's the bandwidth variant real BLE receivers expect),
-// mod index 0.5, BT 0.5 (Bluetooth Core Spec mandated).
-constexpr uint8_t MODULATION_PARAMS[] = {0x4C, 0x01, 0x20};
+// SetModulationParams, LoRa: SF12 (0xC0), BW_800=812.5kHz (0x18), CR 4/7
+// (0x03) -- matched to the ESP32 rx.cpp/tx.cpp counterpart
+// (setSpreadingFactor(12)/setBandwidth(812.5)/setCodingRate(7)). Both radios
+// in the link must use identical SF/BW/CR to demodulate each other.
+constexpr uint8_t MODULATION_PARAMS[] = {0xC0, 0x18, 0x03};
 
-// SetPacketParams, BLE mode (only 4 params accepted, not the general 7):
-// ConnectionState=BLE_ADVERTISER, CrcLength=BLE_CRC_3B,
-// BleTestPayload=0x00, Whitening=BLE_WHITENING_ENABLE.
-constexpr uint8_t PACKET_PARAMS[] = {0x02, 0x10, 0x00, 0x00};
+// SF9-SF12 requires WriteRegister(0x0925, 0x32) alongside SetModulationParams
+// -- not optional per datasheet. SF5/SF6 -> 0x1E, SF7/SF8 -> 0x37.
+constexpr uint8_t SF_TUNING_PARAMS[] = {0x09, 0x25, 0x32};
+
+// LoRa sync word register (0x0944, LORA_SYNC_WORD_MSB), 2 bytes. Matched to
+// RadioLib's SX128x::setSyncWord(0x12) (default controlBits=0x44) on the
+// ESP32 side: byte0 = (syncWord&0xF0)|((controlBits&0xF0)>>4) = 0x14,
+// byte1 = ((syncWord&0x0F)<<4)|(controlBits&0x0F) = 0x24. Without this both
+// radios read the register's own POR-default sync word, which likely
+// doesn't equal RadioLib's encoding of 0x12.
+constexpr uint8_t SYNC_WORD_PARAMS[] = {0x09, 0x44, 0x14, 0x24};
+
+// SetPacketParams, LoRa mode (5 params): PreambleLength=12 symbols
+// (MANT=3,EXP=2 -> 0x23), HeaderType=EXPLICIT_HEADER, PayloadLength=raw byte
+// count (must match the actual WriteBuffer payload size), CRC=enabled
+// (0x20), InvertIQ=LORA_IQ_STD (0x40).
+constexpr uint8_t PACKET_PARAMS[] = {0x23, 0x00, static_cast<uint8_t>(Sx1280Device::PAYLOAD_SIZE), 0x20, 0x40};
 
 // SetTxParams: power=31 -> Pout = -18+31 = +13dBm (max), rampTime=0x00
 // (RADIO_RAMP_02_US, fastest). Datasheet-required before first SetTx
@@ -63,19 +76,8 @@ constexpr uint8_t TX_PARAMS[] = {31, 0x00};
 // dio1/dio2/dio3 masks stay 0 -- not wiring DIO1 yet, polling only.
 constexpr uint8_t DIO_IRQ_PARAMS[] = {0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-// WriteRegister: SyncWord1 register address (0x09CF) followed by the
-// standard BLE advertising access address (0x8E89BED6).
-constexpr uint8_t SYNC_WORD_1_PARAMS[] = {0x09, 0xCF, 0x8E, 0x89, 0xBE, 0xD6};
-
-// WriteRegister: CrcInit register address (0x09C7, 3 bytes MSB-first) set
-// to the standard BLE advertising CRC seed 0x555555 (sx1280.txt:5080-5088).
-// Without this the chip computes CRC with whatever seed it defaults to,
-// which real BLE receivers won't match -- they always assume 0x555555 for
-// advertising-channel packets, and silently drop anything that fails CRC.
-constexpr uint8_t CRC_INIT_PARAMS[] = {0x09, 0xC7, 0x55, 0x55, 0x55};
-
 // WriteBuffer: offset relative to txBaseAddress. Always 0 -- every send
-// rewrites the full PDU from the start of the TX FIFO region.
+// rewrites the full payload from the start of the TX FIFO region.
 constexpr uint8_t WRITE_BUFFER_OFFSET = 0x00;
 
 // ClearIrqStatus: irqMask[15:8], irqMask[7:0] -- clears only TxDone (bit 0).
@@ -85,50 +87,18 @@ constexpr uint8_t CLEAR_IRQ_TX_DONE_PARAMS[] = {0x00, 0x01};
 // periodBaseCount=0x0000 -- Single mode, no timeout, auto-returns to
 // STDBY_RC on completion.
 constexpr uint8_t SET_TX_PARAMS[] = {0x00, 0x00, 0x00};
-
-// AdvData AD structures: Complete Local Name + Manufacturer Specific Data
-// (sensor payload). 0xFFFF is the conventional non-SIG-assigned company ID
-// used for testing -- a real product needs a Bluetooth SIG-registered one.
-constexpr uint8_t AD_TYPE_COMPLETE_LOCAL_NAME = 0x09;
-constexpr uint8_t AD_TYPE_MANUFACTURER_DATA = 0xFF;
-constexpr uint8_t DEVICE_NAME[] = {'S', 'X', '1', '2', '8', '0'};
-constexpr uint16_t MANUFACTURER_ID = 0xFFFF;
-
-constexpr uint8_t NAME_AD_LEN = 1 + sizeof(DEVICE_NAME);
-constexpr uint8_t SENSOR_AD_LEN = 1 + 2 + 7;  // type + companyId + (angle_raw+timestamp_ms+status)
 }  // namespace Sx1280_Constants
 }  // namespace
 
-static_assert(2 + Sx1280_Constants::NAME_AD_LEN + Sx1280_Constants::SENSOR_AD_LEN <= Sx1280Device::BLE_PDU::ADV_DATA_SIZE,
-              "Name + sensor AD structures must fit inside the fixed ADV_DATA_SIZE slot");
-
-void Sx1280Device::AdvData::to_bytes(uint8_t out[BLE_PDU::ADV_DATA_SIZE]) const
+void Sx1280Device::AdvData::to_bytes(uint8_t* out) const
 {
-  uint8_t i = 0;
-
-  // Complete Local Name AD structure.
-  out[i++] = Sx1280_Constants::NAME_AD_LEN;
-  out[i++] = Sx1280_Constants::AD_TYPE_COMPLETE_LOCAL_NAME;
-  for (uint8_t j = 0; j < sizeof(Sx1280_Constants::DEVICE_NAME); ++j) {
-    out[i++] = Sx1280_Constants::DEVICE_NAME[j];
-  }
-
-  // Manufacturer Specific Data AD structure: company ID + sensor payload.
-  out[i++] = Sx1280_Constants::SENSOR_AD_LEN;
-  out[i++] = Sx1280_Constants::AD_TYPE_MANUFACTURER_DATA;
-  out[i++] = static_cast<uint8_t>(Sx1280_Constants::MANUFACTURER_ID & 0xFF);
-  out[i++] = static_cast<uint8_t>((Sx1280_Constants::MANUFACTURER_ID >> 8) & 0xFF);
-  out[i++] = static_cast<uint8_t>(angle_raw & 0xFF);
-  out[i++] = static_cast<uint8_t>((angle_raw >> 8) & 0xFF);
-  out[i++] = static_cast<uint8_t>(timestamp_ms & 0xFF);
-  out[i++] = static_cast<uint8_t>((timestamp_ms >> 8) & 0xFF);
-  out[i++] = static_cast<uint8_t>((timestamp_ms >> 16) & 0xFF);
-  out[i++] = static_cast<uint8_t>((timestamp_ms >> 24) & 0xFF);
-  out[i++] = status;
-
-  for (; i < BLE_PDU::ADV_DATA_SIZE; ++i) {
-    out[i] = 0;
-  }
+  out[0] = static_cast<uint8_t>(angle_raw & 0xFF);
+  out[1] = static_cast<uint8_t>((angle_raw >> 8) & 0xFF);
+  out[2] = static_cast<uint8_t>(timestamp_ms & 0xFF);
+  out[3] = static_cast<uint8_t>((timestamp_ms >> 8) & 0xFF);
+  out[4] = static_cast<uint8_t>((timestamp_ms >> 16) & 0xFF);
+  out[5] = static_cast<uint8_t>((timestamp_ms >> 24) & 0xFF);
+  out[6] = status;
 }
 
 bool Sx1280Device::check_processed(Status s)
@@ -216,7 +186,21 @@ bool Sx1280Device::init()
     return false;
   }
 
+  if (!send_command(Sx1280_OPCODE::WRITE_REGISTER_OP_CODE,
+                    Sx1280_Constants::SF_TUNING_PARAMS,
+                    sizeof(Sx1280_Constants::SF_TUNING_PARAMS),
+                    check_status_or_reserved)) {
+    return false;
+  }
+
   if (!send_command(Sx1280_OPCODE::SET_PACKET_PARAMS_OP_CODE, Sx1280_Constants::PACKET_PARAMS, sizeof(Sx1280_Constants::PACKET_PARAMS))) {
+    return false;
+  }
+
+  if (!send_command(Sx1280_OPCODE::WRITE_REGISTER_OP_CODE,
+                    Sx1280_Constants::SYNC_WORD_PARAMS,
+                    sizeof(Sx1280_Constants::SYNC_WORD_PARAMS),
+                    check_status_or_reserved)) {
     return false;
   }
 
@@ -226,20 +210,6 @@ bool Sx1280Device::init()
 
   if (!send_command(
         Sx1280_OPCODE::SET_DIO_IRQ_PARAMS_OP_CODE, Sx1280_Constants::DIO_IRQ_PARAMS, sizeof(Sx1280_Constants::DIO_IRQ_PARAMS))) {
-    return false;
-  }
-
-  if (!send_command(Sx1280_OPCODE::WRITE_REGISTER_OP_CODE,
-                    Sx1280_Constants::SYNC_WORD_1_PARAMS,
-                    sizeof(Sx1280_Constants::SYNC_WORD_1_PARAMS),
-                    check_status_or_reserved)) {
-    return false;
-  }
-
-  if (!send_command(Sx1280_OPCODE::WRITE_REGISTER_OP_CODE,
-                    Sx1280_Constants::CRC_INIT_PARAMS,
-                    sizeof(Sx1280_Constants::CRC_INIT_PARAMS),
-                    check_status_or_reserved)) {
     return false;
   }
 
@@ -290,8 +260,8 @@ bool Sx1280Device::read_buffer(uint8_t offset, uint8_t* out, uint8_t out_len)
   // ReadBuffer response layout differs from read_register: 3 status bytes
   // before real data starts, not 4 (sx1280.txt:3126-3134).
   uint16_t total_len = 3 + out_len;
-  uint8_t tx[3 + BLE_PDU::SIZE] = {0};
-  uint8_t rx[3 + BLE_PDU::SIZE] = {0};
+  uint8_t tx[3 + MAX_PAYLOAD_SIZE] = {0};
+  uint8_t rx[3 + MAX_PAYLOAD_SIZE] = {0};
   tx[0] = Sx1280_OPCODE::READ_BUFFER_OP_CODE;
   tx[1] = offset;
 
@@ -324,7 +294,7 @@ bool Sx1280Device::BUSY_wait()
   uint32_t start = HAL_GetTick();
   while (HAL_GPIO_ReadPin(BUSY_chip_, BUSY_pin_) == GPIO_PIN_SET) {
     if (HAL_GetTick() - start > BUSY_TIMEOUT_MS) {
-      return false;  // chip unresponsive
+      return false;
     }
   }
   return true;
@@ -358,19 +328,19 @@ bool Sx1280Device::write_buffer(const uint8_t* buf, uint8_t len, bool (*verify)(
     return false;
   }
 
-  if (len > BLE_PDU::SIZE) {
+  if (len > MAX_PAYLOAD_SIZE) {
     return false;
   }
 
-  uint8_t tx[BLE_PDU::SIZE + 2] = {Sx1280_OPCODE::WRITE_BUFFER_OP_CODE, Sx1280_Constants::WRITE_BUFFER_OFFSET};
-  uint8_t rx[BLE_PDU::SIZE + 2] = {};
+  uint8_t tx[MAX_PAYLOAD_SIZE + 2] = {Sx1280_OPCODE::WRITE_BUFFER_OP_CODE, Sx1280_Constants::WRITE_BUFFER_OFFSET};
+  uint8_t rx[MAX_PAYLOAD_SIZE + 2] = {};
 
   for (int i = 0; i < len; i++) {
     tx[i + 2] = buf[i];
   }
 
   SPI_NSS_begin();
-  HAL_StatusTypeDef result = HAL_SPI_TransmitReceive(hspi_, tx, rx, BLE_PDU::SIZE + 2, HAL_MAX_DELAY);
+  HAL_StatusTypeDef result = HAL_SPI_TransmitReceive(hspi_, tx, rx, len + 2, HAL_MAX_DELAY);
   SPI_NSS_end();
 
   const auto s = this->get_status();
@@ -416,15 +386,9 @@ bool Sx1280Device::get_irq_status(uint16_t* out_irq_status)
 
 bool Sx1280Device::send_test_packet(const AdvData& data)
 {
-  uint8_t payload[BLE_PDU::SIZE];
-  payload[0] = BLE_PDU::header[0];
-  payload[1] = BLE_PDU::header[1];
+  uint8_t payload[PAYLOAD_SIZE];
+  data.to_bytes(payload);
 
-  for (uint8_t i = 0; i < BLE_PDU::ADV_A_SIZE; ++i) {
-    payload[BLE_PDU::HEADER_SIZE + i] = BLE_PDU::adv_a[i];
-  }
-
-  data.to_bytes(payload + BLE_PDU::HEADER_SIZE + BLE_PDU::ADV_A_SIZE);
   const auto wb = write_buffer(payload, sizeof(payload), [](Status s) -> bool {
     return s.status == CommandStatus::PROCCESSED || s.status == CommandStatus::RESERVED;
   });
