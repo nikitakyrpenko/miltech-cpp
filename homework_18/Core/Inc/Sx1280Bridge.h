@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Measure.hpp"
 #include "stm32l4xx_hal.h"
 
 #ifdef __cplusplus
@@ -13,7 +14,9 @@ void Sx1280_Init(SPI_HandleTypeDef* hspi,
                  uint16_t nssPin,
                  uint16_t busy_pin,
                  uint16_t nreset_pin);
-void Sx1280_Loop(void);
+
+void Sx1280_Send(struct Measure* measure);
+void Sx1280_OnDio1Irq();
 
 #ifdef __cplusplus
 }

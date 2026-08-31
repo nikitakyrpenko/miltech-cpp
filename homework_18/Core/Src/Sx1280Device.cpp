@@ -73,8 +73,9 @@ constexpr uint8_t TX_PARAMS[] = {31, 0x00};
 // into the IRQ register at all -- confirmed (sx1280.txt:4170-4171) that a
 // bit is only ever set in the IRQ register if the matching irqMask bit is
 // enabled, independent of whether it's routed to a physical DIO pin.
-// dio1/dio2/dio3 masks stay 0 -- not wiring DIO1 yet, polling only.
-constexpr uint8_t DIO_IRQ_PARAMS[] = {0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+// dio1Mask also enables TxDone (bit 0) so it's routed onto the physical
+// DIO1 pin, letting DIO1's EXTI interrupt fire on TxDone.
+constexpr uint8_t DIO_IRQ_PARAMS[] = {0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
 
 // WriteBuffer: offset relative to txBaseAddress. Always 0 -- every send
 // rewrites the full payload from the start of the TX FIFO region.
@@ -367,8 +368,6 @@ bool Sx1280Device::get_irq_status(uint16_t* out_irq_status)
     return false;
   }
 
-  // GetIrqStatus response layout differs from the generic command pattern:
-  // 2 status bytes before the real data, not 1.
   uint8_t tx[4] = {Sx1280_OPCODE::GET_IRQ_STATUS_OP_CODE, 0, 0, 0};
   uint8_t rx[4] = {0};
 
@@ -380,6 +379,7 @@ bool Sx1280Device::get_irq_status(uint16_t* out_irq_status)
     return false;
   }
 
+  // irq mask is 16 bit value splited for two registers with first 2 dummy values
   *out_irq_status = (static_cast<uint16_t>(rx[2]) << 8) | rx[3];
   return true;
 }
