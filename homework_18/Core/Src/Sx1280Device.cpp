@@ -91,17 +91,6 @@ constexpr uint8_t SET_TX_PARAMS[] = {0x00, 0x00, 0x00};
 }  // namespace Sx1280_Constants
 }  // namespace
 
-void Sx1280Device::AdvData::to_bytes(uint8_t* out) const
-{
-  out[0] = static_cast<uint8_t>(angle_raw & 0xFF);
-  out[1] = static_cast<uint8_t>((angle_raw >> 8) & 0xFF);
-  out[2] = static_cast<uint8_t>(timestamp_ms & 0xFF);
-  out[3] = static_cast<uint8_t>((timestamp_ms >> 8) & 0xFF);
-  out[4] = static_cast<uint8_t>((timestamp_ms >> 16) & 0xFF);
-  out[5] = static_cast<uint8_t>((timestamp_ms >> 24) & 0xFF);
-  out[6] = status;
-}
-
 bool Sx1280Device::check_processed(Status s)
 {
   return s.status == CommandStatus::PROCCESSED;
@@ -384,16 +373,3 @@ bool Sx1280Device::get_irq_status(uint16_t* out_irq_status)
   return true;
 }
 
-bool Sx1280Device::send_test_packet(const AdvData& data)
-{
-  uint8_t payload[PAYLOAD_SIZE];
-  data.to_bytes(payload);
-
-  const auto wb = write_buffer(payload, sizeof(payload), [](Status s) -> bool {
-    return s.status == CommandStatus::PROCCESSED || s.status == CommandStatus::RESERVED;
-  });
-  const auto rq = clear_irq();
-  const auto tx = set_tx();
-
-  return wb && rq && tx;
-}

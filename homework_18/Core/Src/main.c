@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "As5600Bridge.h"
 #include "Measure.hpp"
 #include "Sx1280Bridge.h"
 #include "cmsis_gcc.h"
@@ -37,9 +38,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define AS5600_I2C_ADDR    (0x36 << 1)
-#define AS5600_REG_STATUS  0x0B
-#define AS5600_STATUS_MD   0x20
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -113,6 +111,7 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   Sx1280_Init(&hspi2, NSS_GPIO_Port, Busy_GPIO_Port, NReset_GPIO_Port, NSS_Pin, Busy_Pin, NReset_Pin);
+  As5600_Init(&hi2c1);
 
   /* USER CODE END 2 */
 
@@ -136,6 +135,7 @@ int main(void)
 
     if (TIM6_callback_triggered) {
       struct Measure m = {0};
+      As5600_Poll(&m);
       Sx1280_Send(&m);
 
       TIM6_callback_triggered = false;

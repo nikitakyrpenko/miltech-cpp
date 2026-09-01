@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "Measure.hpp"
 #include "stm32l476xx.h"
 #include "stm32l4xx_hal.h"
 #include "stm32l4xx_hal_gpio.h"
@@ -37,20 +38,10 @@ public:
     bool is_ok() const;
   };
 
-#pragma pack(push, 1)
-  struct AdvData {
-    uint16_t angle_raw;
-    uint32_t timestamp_ms;
-    uint8_t status;
-
-    void to_bytes(uint8_t* out) const;
-  };
-#pragma pack(pop)
-
   static constexpr uint8_t MAX_PAYLOAD_SIZE = 32;
-  static constexpr uint8_t PAYLOAD_SIZE = sizeof(AdvData);
+  static constexpr uint8_t PAYLOAD_SIZE = sizeof(Measure);
 
-  static_assert(PAYLOAD_SIZE <= MAX_PAYLOAD_SIZE, "AdvData must fit inside MAX_PAYLOAD_SIZE");
+  static_assert(PAYLOAD_SIZE <= MAX_PAYLOAD_SIZE, "Measure must fit inside MAX_PAYLOAD_SIZE");
 
   static constexpr uint16_t IRQ_TX_DONE = 0x0001;
 
@@ -71,7 +62,6 @@ public:
   bool clear_irq(bool (*verify)(Status) = &check_processed);
   bool set_tx(bool (*verify)(Status) = &check_processed);
   bool get_irq_status(uint16_t* out_irq_status);
-  bool send_test_packet(const AdvData& data);
 
 private:
   SPI_HandleTypeDef* hspi_;

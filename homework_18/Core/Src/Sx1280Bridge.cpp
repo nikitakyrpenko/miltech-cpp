@@ -10,7 +10,6 @@ namespace {
 Sx1280Device* LORA_1280 = nullptr;
 
 volatile bool Sx1280Device_initizalized_success = false;
-volatile bool Sx1280Device_periodic_wake = false;
 volatile bool Sx1280Device_tx_done = true;
 
 constexpr uint32_t TCXO_WARMUP_MS = 5;
@@ -32,11 +31,11 @@ void Sx1280_Init(SPI_HandleTypeDef* hspi,
   LORA_1280->reset();
   Sx1280Device_initizalized_success = LORA_1280->init();
 
-  if (LORA_1280 == nullptr || !Sx1280Device_initizalized_success) {
+  if (!Sx1280Device_initizalized_success) {
     return;
   }
 
-  if (LORA_1280 != nullptr && LORA_1280->get_status().is_ok()) {
+  if (LORA_1280->get_status().is_ok()) {
     BSP_LED_On(LED_GREEN);
   }
 }

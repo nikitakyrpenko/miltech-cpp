@@ -49,6 +49,8 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/Sx1280Bridge.cpp
     Core/Src/Sx1280Device.cpp
+    Core/Src/As5600Device.cpp
+    Core/Src/As5600Bridge.cpp
 )
 
 # Add include paths
