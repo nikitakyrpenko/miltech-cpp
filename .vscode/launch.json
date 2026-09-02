@@ -256,6 +256,41 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      // Remote-debug: код виконується на target-платі, а не в контейнері.
+      // debugServerPath запускає st-util як GDB server; customLaunchSetupCommands
+      // повністю замінює стандартну launch-послідовність (яка передбачає
+      // local process, тут немає) на явний connect/reset/load.
+      "name": "Debug homework_18 : STM32L476 (st-util)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_18/build/Debug/homework_18.elf",
+      "cwd": "${workspaceFolder}/homework_18",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb-multiarch",
+      "targetArchitecture": "arm",
+      "debugServerPath": "/usr/bin/st-util",
+      "debugServerArgs": "--connect-under-reset -F 480k",
+      "serverStarted": "Listening at",
+      "filterStderr": true,
+      "externalConsole": false,
+      "preLaunchTask": "STM32: build (homework_18)",
+      "postDebugTask": "STM32: kill stray debug processes (homework_18)",
+      "customLaunchSetupCommands": [
+        { "text": "file ${workspaceFolder}/homework_18/build/Debug/homework_18.elf" },
+        { "text": "target remote localhost:4242" },
+        { "text": "monitor reset halt" },
+        { "text": "load" }
+      ],
+      "launchCompleteCommand": "exec-continue",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ]
 }

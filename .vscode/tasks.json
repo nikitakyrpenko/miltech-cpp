@@ -32,6 +32,61 @@
         "panel": "dedicated",
         "clear": true
       }
+    },
+    {
+      // homework_18 - окремий bare-metal проєкт зі своїм CMakePresets.json
+      // (arm-none-eabi toolchain), тому configure/build запускається з
+      // власним cwd, а не з кореня workspace.
+      "label": "STM32: build (homework_18)",
+      "type": "shell",
+      "command": "cmake --preset Debug && cmake --build --preset Debug",
+      "options": {
+        "cwd": "${workspaceFolder}/homework_18"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      // cppdbg (debugServerPath) не завжди прибирає за собою st-util при
+      // невдалому launch - orphaned процес тримає USB device claimed і
+      // ламає наступну спробу ("No process is associated with this
+      // object", "unable to claim"). `|| true` - pkill повертає non-zero
+      // коли нічого не знайдено, це не має рахуватись як failed task.
+      "label": "STM32: kill stray debug processes (homework_18)",
+      "type": "shell",
+      "command": "pkill -f st-util; pkill -f gdb-multiarch; true",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "clear": false
+      }
+    },
+    {
+      // objcopy обов'язковий: CMake генерує лише .elf, st-flash розуміє
+      // тільки сирий .bin. Без цього кроку st-flash пише застарілий .bin.
+      "label": "STM32: flash (homework_18)",
+      "type": "shell",
+      "command": "arm-none-eabi-objcopy -O binary build/Debug/homework_18.elf build/Debug/homework_18.bin && st-flash write build/Debug/homework_18.bin 0x08000000 && st-flash reset",
+      "options": {
+        "cwd": "${workspaceFolder}/homework_18"
+      },
+      "dependsOn": [
+        "STM32: build (homework_18)"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
     }
   ]
 }
