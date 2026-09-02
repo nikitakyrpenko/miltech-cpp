@@ -17,6 +17,7 @@ void Sx1280_Init(SPI_HandleTypeDef* hspi,
 
 void Sx1280_Send(struct Measure* measure);
 void Sx1280_OnDio1Irq();
+void Sx1280_SetFrequency(uint32_t freq_hz);
 
 #ifdef __cplusplus
 }

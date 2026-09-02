@@ -56,6 +56,7 @@ public:
   Status get_status();
   bool init();
   void reset();
+  bool set_frequency(uint32_t freq_hz);
   bool read_register(uint16_t address, uint8_t* out, uint16_t out_len);
   bool read_buffer(uint8_t offset, uint8_t* out, uint8_t out_len);
   bool write_buffer(const uint8_t* buf, uint8_t len, bool (*verify)(Status) = &check_processed);

@@ -64,6 +64,18 @@ void Sx1280_Send(Measure* measure)
   }
 }
 
+void Sx1280_SetFrequency(uint32_t freq_hz)
+{
+  if (LORA_1280 == nullptr) {
+    return;
+  }
+  if (!Sx1280Device_initizalized_success) {
+    return;
+  }
+
+  LORA_1280->set_frequency(freq_hz);
+}
+
 void Sx1280_OnDio1Irq()
 {
   if (LORA_1280 == nullptr) {

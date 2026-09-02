@@ -10,6 +10,9 @@ extern "C" {
 void Uart_Init(UART_HandleTypeDef* huart);
 void Uart_SendMeasure(struct Measure* measure);
 
+void Uart_StartRx();
+void Uart_PollCommand();
+
 #ifdef __cplusplus
 }
 #endif

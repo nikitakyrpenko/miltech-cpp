@@ -127,6 +127,18 @@ Sx1280Device::Sx1280Device(SPI_HandleTypeDef* spi,
 {
 }
 
+bool Sx1280Device::set_frequency(uint32_t freq_hz)
+{
+  uint32_t freq_reg = static_cast<uint32_t>((static_cast<uint64_t>(freq_hz) * 1024) / 203125);
+  uint8_t params[] = {
+    static_cast<uint8_t>(freq_reg >> 16),
+    static_cast<uint8_t>(freq_reg >> 8),
+    static_cast<uint8_t>(freq_reg),
+  };
+
+  return send_command(Sx1280_OPCODE::SET_FREQUENCY_OP_CODE, params, sizeof(params));
+}
+
 Sx1280Device::Status Sx1280Device::get_status()
 {
   if (!BUSY_wait()) {
