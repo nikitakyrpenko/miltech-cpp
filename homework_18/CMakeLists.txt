@@ -51,6 +51,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/Sx1280Device.cpp
     Core/Src/As5600Device.cpp
     Core/Src/As5600Bridge.cpp
+    Core/Src/UartBridge.cpp
 )
 
 # Add include paths

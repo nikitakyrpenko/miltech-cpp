@@ -1,6 +1,10 @@
 #pragma once
 #include <stdint.h>
 
+#ifdef __cplusplus
+#include <cstdio>
+#endif
+
 struct Measure {
   uint16_t angle_raw;
   uint16_t status;
@@ -22,6 +26,19 @@ struct Measure {
     out[7] = static_cast<uint8_t>(timestamp_ms >> 24);
 
     return len;
+  }
+
+  uint8_t to_string(char* out, uint8_t len)
+  {
+    if (out == nullptr || len == 0) {
+      return 0;
+    }
+    int written = std::snprintf(out, len, "angle=%u status=%u ts=%lu\r\n", angle_raw, status, static_cast<unsigned long>(timestamp_ms));
+
+    if (written < 0) {
+      return 0;
+    }
+    return static_cast<uint8_t>(written < len ? written : len - 1);
   }
 #endif
 };
