@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <cstddef>
 #include <cstdint>
+#include "FdIo.hpp"
 
 class UartPort {
   const int fd_{};
@@ -12,8 +13,8 @@ class UartPort {
 public:
   explicit UartPort(const char* serial);
 
-  bool write_all(const uint8_t* buf, size_t len, int timeout = -1);
-  ssize_t read_some(uint8_t* buf, size_t limit, int timeout = -1);
+  FdIo::Result write(const uint8_t* buf, size_t len, int timeout = -1, size_t* written = nullptr);
+  FdIo::Result read_some(uint8_t* buf, size_t limit, int timeout = -1, size_t* read_bytes = nullptr);
 
   ~UartPort();
 };

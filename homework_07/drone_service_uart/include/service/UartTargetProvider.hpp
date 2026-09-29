@@ -1,6 +1,5 @@
 #pragma once
 
-#include "DroneLink.hpp"
 #include "ScheduledWorker.hpp"
 #include "UartLink.hpp"
 #include "service/interfaces/IConfigLoader.hpp"

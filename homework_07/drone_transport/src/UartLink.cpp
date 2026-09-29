@@ -1,7 +1,10 @@
 #include "UartLink.hpp"
+#include "FdIo.hpp"
 
+#include <cstddef>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 #include <unistd.h>
 
 static constexpr size_t BUFF_LEN = 256;
@@ -15,7 +18,13 @@ void UartLink::send(const dlink::Control& ctrl)
 {
   uint8_t frame[sizeof(dlink::Control) + 6];
   const size_t len = dlink::encode(dlink::PKT_CONTROL, &ctrl, sizeof(ctrl), frame);
-  port_->write_all(frame, len);
+
+  size_t bytes_written = 0;
+  const auto r = port_->write(frame, len, -1, &bytes_written);
+
+  if (r != FdIo::Result::OK) {
+    throw std::runtime_error("UartLink::send failed after " + std::to_string(bytes_written) + " of " + std::to_string(len) + " bytes");
+  }
 }
 
 void UartLink::run_loop()
@@ -24,19 +33,19 @@ void UartLink::run_loop()
 
   while (running_) {
     uint8_t buff[BUFF_LEN]{};
-    const ssize_t r = port_->read_some(buff, BUFF_LEN, 1);
+
+    size_t bytes_read = 0;
+    const auto r = port_->read_some(buff, BUFF_LEN, -1, &bytes_read);
 
     uint8_t type, len, payload[260];
 
-    if (r == 0) {
-      continue;
-    }
-    if (r < 0) {
+    if (r == FdIo::Result::FAILED) {
+      std::cerr << "[UartLink] read failed, stopping link\n";
       interrupt();
       break;
     }
 
-    for (int i = 0; i < r; i++) {
+    for (size_t i = 0; i < bytes_read; i++) {
       if (parser.feed(buff[i], type, payload, len)) {
         switch (type) {
           case dlink::PacketType::PKT_TELEMETRY: {
@@ -74,6 +83,12 @@ void UartLink::run_loop()
             break;
         }
       }
+    }
+
+    if (r == FdIo::Result::CLOSED) {
+      std::cerr << "[UartLink] serial port closed, stopping link\n";
+      interrupt();
+      break;
     }
   }
 }
