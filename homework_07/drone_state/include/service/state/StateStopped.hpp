@@ -31,3 +31,4 @@ inline const StateDecision StateStopped::decide(const DroneSpec& spec, const Dro
 
   return {StateTurning::get_instance(), dir};
 }
+

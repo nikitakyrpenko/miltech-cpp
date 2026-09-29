@@ -5,6 +5,7 @@
 #include <optional>
 #include <queue>
 #include <utility>
+#include <vector>
 
 template <typename T>
 class SynchronizedQueue {
@@ -37,6 +38,21 @@ public:
     counter_ = 0;
 
     return last;
+  }
+
+  const std::vector<T> drain_all()
+  {
+    std::lock_guard<std::mutex> l(mtx_);
+
+    std::vector<T> result;
+    result.reserve(queue_.size());
+
+    while (!queue_.empty()) {
+      result.push_back(std::move(queue_.front()));
+      queue_.pop();
+    }
+    counter_ = 0;
+    return result;
   }
 
   int size() const { return counter_; }
