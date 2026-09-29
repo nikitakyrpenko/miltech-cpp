@@ -210,7 +210,8 @@
         "gpiochip4",
         "/dev/ttyHS1",
         "24",
-        "100"
+        "100",
+        "dz12-vX7mK4qT9r2w"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

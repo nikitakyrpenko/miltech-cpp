@@ -25,15 +25,13 @@ size_t write_to_sock(const uint8_t* buf, size_t len, size_t chunk_size, TcpPort&
 
   while (sent < len) {
     const size_t n = std::min(chunk_size, len - sent);
-    const ssize_t written = port.write(buf + sent, n, timeout);
 
-    if (written < 0) {
-      return sent;
-    }
+    size_t written = 0;
+    const auto r = port.write(buf + sent, n, timeout, &written);
 
-    sent += static_cast<size_t>(written);
+    sent += written;
 
-    if (written != static_cast<ssize_t>(n)) {
+    if (r != FdIo::Result::OK) {
       return sent;
     }
   }
@@ -47,15 +45,17 @@ std::optional<std::string> read_from_sock(TcpPort& port, int timeout)
   uint8_t buf[CHUNK_SIZE];
 
   for (;;) {
-    const ssize_t r = port.read(buf, sizeof(buf), timeout);
-    if (r > 0) {
-      response.append(reinterpret_cast<const char*>(buf), static_cast<size_t>(r));
-      continue;
-    }
-    if (r == 0) {
+    size_t n = 0;
+    const auto r = port.read_some(buf, sizeof(buf), timeout, &n);
+
+    response.append(reinterpret_cast<const char*>(buf), n);
+
+    if (r == FdIo::Result::CLOSED) {
       return response;
     }
-    return std::nullopt;
+    if (r != FdIo::Result::OK) {
+      return std::nullopt;
+    }
   }
 }
 
